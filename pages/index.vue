@@ -10,7 +10,7 @@ function toggleSidebar() {
 </script>
 
 <template>
-  <div class="flex h-screen bg-gray-50">
+  <div class="flex h-screen bg-gray-50 overflow-hidden">
     <!-- Sidebar -->
     <ChatSidebar
       :is-open="isSidebarOpen"
@@ -19,7 +19,7 @@ function toggleSidebar() {
     />
 
     <!-- Main content -->
-    <div class="flex-1 flex flex-col">
+    <div class="flex-1 flex flex-col h-full min-h-0">
       <!-- Header (mobile only) -->
       <header
         class="md:hidden flex items-center justify-between p-4 border-b bg-white"
@@ -34,7 +34,7 @@ function toggleSidebar() {
       </header>
 
       <!-- Chat window -->
-      <div class="flex-1">
+      <div class="flex-1 min-h-0">
         <ChatWindow />
       </div>
     </div>

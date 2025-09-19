@@ -53,30 +53,63 @@ export function useChat() {
   }
 
   async function newChat() {
-    await fetch("/api/sessions", {
+    // Buat session baru
+    const res = await fetch("/api/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: "New Chat" }),
     });
-    await fetchSessions();
+    const data = await res.json();
+    // Set session aktif ke session baru
+    if (data.session && data.session.id) {
+      activeSessionId.value = data.session.id;
+      messages.value = [];
+      await fetchSessions();
+    } else {
+      await fetchSessions();
+      if (sessions.value.length > 0) {
+        activeSessionId.value = sessions.value[sessions.value.length - 1].id;
+        messages.value = [];
+      }
+    }
   }
 
   async function send() {
     if (!input.value.trim() || !activeSessionId.value) return;
     isLoading.value = true;
+    // Tampilkan pesan user langsung di chatwindow
+    const userMsg: Message = {
+      id: "u-" + Date.now(),
+      role: "user",
+      content: input.value,
+    };
+    messages.value.push(userMsg);
+    // Tampilkan bubble loading balasan
+    const loadingMsg: Message = {
+      id: "loading",
+      role: "assistant",
+      content: "",
+    };
+    messages.value.push(loadingMsg);
+    const promptToSend = input.value;
+    input.value = "";
+    // Kirim ke backend
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        prompt: input.value,
+        prompt: promptToSend,
         role: "user",
         sessionId: activeSessionId.value,
       }),
     });
     const data = await res.json();
-    // Refresh messages dari backend agar sinkron
+    // Hapus bubble loading
+    const idx = messages.value.findIndex((m) => m.id === "loading");
+    if (idx !== -1) messages.value.splice(idx, 1);
+    // Refresh messages dan sessions agar judul session update
     await fetchMessages(activeSessionId.value);
-    input.value = "";
+    await fetchSessions();
     isLoading.value = false;
   }
 

@@ -46,6 +46,16 @@ export default defineEventHandler(async (event) => {
     },
   });
 
+  // Jika pesan pertama, update kolom title ChatSession
+  const msgCount = await prisma.message.count({ where: { sessionId } });
+  if (msgCount === 1) {
+    const summary = prompt.length > 40 ? prompt.slice(0, 37) + "..." : prompt;
+    await prisma.chatSession.update({
+      where: { id: sessionId },
+      data: { title: summary },
+    });
+  }
+
   // Simpan pesan balasan Gemini ke database
   await prisma.message.create({
     data: {
