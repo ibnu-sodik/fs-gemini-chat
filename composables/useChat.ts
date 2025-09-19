@@ -1,6 +1,6 @@
 import { ref } from "vue";
 
-interface Message {
+export interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
@@ -13,48 +13,34 @@ export function useChat(sessionId: string) {
 
   async function send() {
     if (!input.value.trim()) return;
-    // Tambahkan pesan user lokal
-    messages.value.push({
+    // Tambahkan pesan user ke state
+    const userMsg: Message = {
       id: "u-" + Date.now(),
       role: "user",
       content: input.value,
-    });
+    };
+    messages.value.push(userMsg);
 
     isLoading.value = true;
 
-    // Mulai streaming dari server endpoint
+    // Kirim ke backend
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: [...messages.value] }),
+      body: JSON.stringify({ prompt: input.value, role: "user" }),
     });
+    const data = await res.json();
 
-    if (!res.body) {
-      isLoading.value = false;
-      return;
-    }
+    // Tambahkan response AI ke state
+    const aiMsg: Message = {
+      id: "a-" + Date.now(),
+      role: data.role || "assistant",
+      content: data.response,
+    };
+    messages.value.push(aiMsg);
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let assistantId = "a-" + Date.now();
-    messages.value.push({ id: assistantId, role: "assistant", content: "" });
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      // bisa jadi chunk mengandung JSON atau raw teks tergantung bagaimana server streaming mengirim
-      // misal chunk adalah teks langsung:
-      messages.value = messages.value.map((m) => {
-        if (m.id === assistantId) {
-          return { ...m, content: m.content + chunk };
-        }
-        return m;
-      });
-    }
-
-    isLoading.value = false;
     input.value = "";
+    isLoading.value = false;
   }
 
   return {

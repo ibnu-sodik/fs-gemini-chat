@@ -1,36 +1,17 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { marked } from "marked";
+import { useChat } from "@/composables/useChat";
+const { messages, input, send, isLoading } = useChat("default-session");
 
-const messages = ref<{ id: string; role: string; content: string }[]>([]);
-const input = ref("");
-const isLoading = ref(false);
+function handleEnter(e: KeyboardEvent) {
+  if (e.ctrlKey && e.key === "Enter") {
+    e.preventDefault();
+    send();
+  }
+}
 
-async function sendMessage() {
-  if (!input.value.trim()) return;
-  isLoading.value = true;
-  // Tambahkan pesan user ke UI
-  messages.value.push({
-    id: "u-" + Date.now(),
-    role: "user",
-    content: input.value,
-  });
-
-  // Kirim ke backend
-  const res = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: input.value }),
-  });
-  const data = await res.json();
-
-  // Tambahkan response AI ke UI
-  messages.value.push({
-    id: "a-" + Date.now(),
-    role: "assistant",
-    content: data.response,
-  });
-  input.value = "";
-  isLoading.value = false;
+function formatAI(text: string) {
+  return marked.parse(text);
 }
 </script>
 
@@ -42,28 +23,30 @@ async function sendMessage() {
         v-for="m in messages"
         :key="m.id"
         :class="[
-          'max-w-md px-4 py-2 rounded-lg shadow',
+          'px-4 py-2 rounded-lg shadow w-fit max-w-[80vw] md:max-w-xl',
           m.role === 'user'
             ? 'ml-auto bg-blue-600 text-white'
             : 'mr-auto bg-gray-100 text-gray-900',
+          m.role === 'assistant' ? 'break-words' : '',
         ]"
       >
-        {{ m.content }}
+        <span v-if="m.role === 'user'">{{ m.content }}</span>
+        <span v-else v-html="formatAI(m.content)"></span>
       </div>
     </div>
 
     <!-- Input Box -->
     <form
       class="p-4 border-t border-gray-200 flex gap-2"
-      @submit.prevent="sendMessage"
+      @submit.prevent="send"
     >
-      <input
+      <textarea
         v-model="input"
-        @keyup.enter.prevent="sendMessage"
-        type="text"
+        @keydown.enter="handleEnter"
         placeholder="Ketik pesan..."
-        class="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[40px]"
         :disabled="isLoading"
+        rows="2"
       />
       <button
         type="submit"
