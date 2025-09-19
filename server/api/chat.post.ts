@@ -17,8 +17,27 @@ export default defineEventHandler(async (event) => {
   if (!prompt || !role || !sessionId)
     return { response: "", role: "assistant" };
 
-  const aiResponse = `AI response for: ${prompt}`;
+  // Ambil userId dari session
+  const session = await prisma.chatSession.findUnique({
+    where: { id: sessionId },
+    select: { userId: true },
+  });
+  const userId = session?.userId || null;
 
+  // Kirim prompt ke Google Gemini
+  let aiResponse = "";
+  try {
+    const genAI = new GoogleGenAI({ apiKey });
+    const result = await genAI.models.generateContent({
+      model: "gemini-1.5-flash", // atau model lain sesuai kebutuhan
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+    aiResponse = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  } catch (err) {
+    aiResponse = "[Error memanggil Gemini]";
+  }
+
+  // Simpan pesan user ke database
   await prisma.message.create({
     data: {
       content: prompt,
@@ -27,6 +46,7 @@ export default defineEventHandler(async (event) => {
     },
   });
 
+  // Simpan pesan balasan Gemini ke database
   await prisma.message.create({
     data: {
       content: aiResponse,
