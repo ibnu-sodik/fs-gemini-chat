@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { marked } from "marked";
 import { useChat } from "@/composables/useChat";
-const { messages, input, send, isLoading } = useChat("");
+const { messages, input, send, isLoading } = useChat();
 
 function handleEnter(e: KeyboardEvent) {
   if (e.ctrlKey && e.key === "Enter") {

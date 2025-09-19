@@ -12,7 +12,11 @@ export interface ChatSession {
   title: string;
 }
 
-export function useChat(sessionId: string) {
+let chatState: any;
+
+export function useChat() {
+  if (chatState) return chatState;
+
   const sessions = ref<ChatSession[]>([]);
   const activeSessionId = ref<string>("");
   const messages = ref<Message[]>([]);
@@ -20,13 +24,20 @@ export function useChat(sessionId: string) {
   const isLoading = ref(false);
 
   async function fetchSessions() {
-    // Ambil session dari API backend
     const res = await fetch("/api/sessions");
     const data = await res.json();
     sessions.value = data.sessions;
     if (sessions.value.length > 0) {
-      activeSessionId.value = sessions.value[0].id;
+      // Jika session aktif tidak ada, pilih pertama
+      if (
+        !activeSessionId.value ||
+        !sessions.value.find((s) => s.id === activeSessionId.value)
+      ) {
+        activeSessionId.value = sessions.value[0].id;
+      }
       await fetchMessages(activeSessionId.value);
+    } else {
+      messages.value = [];
     }
   }
 
@@ -42,8 +53,7 @@ export function useChat(sessionId: string) {
   }
 
   async function newChat() {
-    // Buat session baru via API
-    const res = await fetch("/api/sessions", {
+    await fetch("/api/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: "New Chat" }),
@@ -54,7 +64,6 @@ export function useChat(sessionId: string) {
   async function send() {
     if (!input.value.trim() || !activeSessionId.value) return;
     isLoading.value = true;
-    // Kirim pesan user ke backend
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -65,24 +74,15 @@ export function useChat(sessionId: string) {
       }),
     });
     const data = await res.json();
-    // Tambahkan pesan user dan AI ke state
-    messages.value.push({
-      id: "u-" + Date.now(),
-      role: "user",
-      content: input.value,
-    });
-    messages.value.push({
-      id: "a-" + Date.now(),
-      role: "assistant",
-      content: data.response,
-    });
+    // Refresh messages dari backend agar sinkron
+    await fetchMessages(activeSessionId.value);
     input.value = "";
     isLoading.value = false;
   }
 
   onMounted(fetchSessions);
 
-  return {
+  chatState = {
     sessions,
     activeSessionId,
     setActive,
@@ -92,4 +92,5 @@ export function useChat(sessionId: string) {
     send,
     isLoading,
   };
+  return chatState;
 }
