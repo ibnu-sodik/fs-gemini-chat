@@ -1,68 +1,66 @@
-// composables/useChat.ts
-import { ref, computed } from "vue";
+import { ref } from "vue";
 
-export interface Message {
+interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
 }
 
-export interface ChatSession {
-  id: string;
-  title: string;
-  messages: Message[];
-}
+export function useChat(sessionId: string) {
+  const messages = ref<Message[]>([]);
+  const input = ref("");
+  const isLoading = ref(false);
 
-const sessions = ref<ChatSession[]>([]);
-const activeSessionId = ref<string | null>(null);
-
-export function useChat() {
-  function newChat() {
-    const id = Date.now().toString();
-    sessions.value.push({
-      id,
-      title: `Chat ${sessions.value.length + 1}`,
-      messages: [],
-    });
-    activeSessionId.value = id;
-  }
-
-  function sendMessage(content: string) {
-    if (!activeSessionId.value) return;
-    const session = sessions.value.find((s) => s.id === activeSessionId.value);
-    if (!session) return;
-
-    // Pesan user
-    session.messages.push({
-      id: Date.now().toString(),
+  async function send() {
+    if (!input.value.trim()) return;
+    // Tambahkan pesan user lokal
+    messages.value.push({
+      id: "u-" + Date.now(),
       role: "user",
-      content,
+      content: input.value,
     });
 
-    // Balasan AI (dummy)
-    setTimeout(() => {
-      session.messages.push({
-        id: Date.now().toString() + "-ai",
-        role: "assistant",
-        content: `AI menjawab: "${content}" (dummy response)`,
+    isLoading.value = true;
+
+    // Mulai streaming dari server endpoint
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: [...messages.value] }),
+    });
+
+    if (!res.body) {
+      isLoading.value = false;
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let assistantId = "a-" + Date.now();
+    messages.value.push({ id: assistantId, role: "assistant", content: "" });
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      // bisa jadi chunk mengandung JSON atau raw teks tergantung bagaimana server streaming mengirim
+      // misal chunk adalah teks langsung:
+      messages.value = messages.value.map((m) => {
+        if (m.id === assistantId) {
+          return { ...m, content: m.content + chunk };
+        }
+        return m;
       });
-    }, 500);
-  }
+    }
 
-  function setActive(id: string) {
-    activeSessionId.value = id;
+    isLoading.value = false;
+    input.value = "";
   }
-
-  const activeSession = computed(
-    () => sessions.value.find((s) => s.id === activeSessionId.value) || null
-  );
 
   return {
-    sessions,
-    activeSessionId,
-    activeSession,
-    newChat,
-    sendMessage,
-    setActive,
+    messages,
+    input,
+    send,
+    isLoading,
   };
 }

@@ -1,20 +1,36 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
-const messages = ref([
-  { id: 1, role: "user", content: "Halo Gemini 👋" },
-  {
-    id: 2,
-    role: "assistant",
-    content: "Hai! Ada yang bisa saya bantu hari ini?",
-  },
-]);
-
+const messages = ref<{ id: string; role: string; content: string }[]>([]);
 const input = ref("");
-function sendMessage() {
+const isLoading = ref(false);
+
+async function sendMessage() {
   if (!input.value.trim()) return;
-  messages.value.push({ id: Date.now(), role: "user", content: input.value });
+  isLoading.value = true;
+  // Tambahkan pesan user ke UI
+  messages.value.push({
+    id: "u-" + Date.now(),
+    role: "user",
+    content: input.value,
+  });
+
+  // Kirim ke backend
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: input.value }),
+  });
+  const data = await res.json();
+
+  // Tambahkan response AI ke UI
+  messages.value.push({
+    id: "a-" + Date.now(),
+    role: "assistant",
+    content: data.response,
+  });
   input.value = "";
+  isLoading.value = false;
 }
 </script>
 
@@ -38,20 +54,23 @@ function sendMessage() {
 
     <!-- Input Box -->
     <form
-      @submit.prevent="sendMessage"
       class="p-4 border-t border-gray-200 flex gap-2"
+      @submit.prevent="sendMessage"
     >
       <input
         v-model="input"
+        @keyup.enter.prevent="sendMessage"
         type="text"
         placeholder="Ketik pesan..."
         class="flex-1 border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        :disabled="isLoading"
       />
       <button
         type="submit"
+        :disabled="isLoading"
         class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
       >
-        Kirim
+        {{ isLoading ? "Loading..." : "Send" }}
       </button>
     </form>
   </div>
