@@ -9,15 +9,31 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, message: "Missing GOOGLE_API_KEY" });
   }
 
-  const genAI = new GoogleGenAI({ apiKey });
-  const result = await genAI.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: body.prompt,
+  // Inisialisasi PrismaClient
+  const { PrismaClient } = await import("@prisma/client");
+  const prisma = new PrismaClient();
+
+  const { prompt, role, sessionId } = body;
+  if (!prompt || !role || !sessionId)
+    return { response: "", role: "assistant" };
+
+  const aiResponse = `AI response for: ${prompt}`;
+
+  await prisma.message.create({
+    data: {
+      content: prompt,
+      role: "user",
+      sessionId,
+    },
   });
-  console.log(result);
-  // Cek struktur response
-  return {
-    response: result?.candidates?.[0]?.content?.parts?.[0]?.text || "",
-    role: "assistant",
-  };
+
+  await prisma.message.create({
+    data: {
+      content: aiResponse,
+      role: "assistant",
+      sessionId,
+    },
+  });
+
+  return { response: aiResponse, role: "assistant" };
 });

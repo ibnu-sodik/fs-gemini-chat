@@ -6,7 +6,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits(["close"]);
-const { sessions, activeSessionId, setActive, newChat } = useChat();
+const { sessions, activeSessionId, setActive, newChat } = useChat("");
 
 function handleSelect(id: string) {
   setActive(id);
