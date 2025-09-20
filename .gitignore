@@ -9,9 +9,6 @@ dist
 # Node dependencies
 node_modules
 
-#prisma
-prisma
-
 # Logs
 logs
 *.log

@@ -1,4 +1,8 @@
-// npx prisma init
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
   provider = "prisma-client-js"
@@ -38,6 +42,3 @@ model Message {
   parentMessage   Message?    @relation("MessageBranch", fields: [parentMessageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   children        Message[]   @relation("MessageBranch")
 }
-
-// npx prisma generate
-// npx prisma migrate dev --name init
