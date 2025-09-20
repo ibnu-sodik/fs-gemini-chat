@@ -1,0 +1,43 @@
+// npx prisma init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String        @id @default(cuid()) // ID unik dari CUID
+  email       String        @unique             // Email pengguna, digunakan untuk login
+  logtoId     String        @unique             // ID dari Logto untuk sinkronisasi
+  sessions    ChatSession[]                     // Relasi ke semua sesi chat milik pengguna
+}
+
+model ChatSession {
+  id        String    @id @default(cuid())
+  title     String    @default("New Chat")      // Judul sesi, bisa di-update dengan fitur bonus
+  createdAt DateTime  @default(now())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade) // Hapus sesi jika user dihapus
+  messages  Message[]
+}
+
+model Message {
+  id          String      @id @default(cuid())
+  content     String      @db.Text                  // Gunakan tipe Text untuk pesan yang panjang
+  role        String      // "user" atau "assistant"
+  createdAt   DateTime    @default(now())
+  sessionId   String
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade) // Hapus pesan jika sesi dihapus
+
+  // Untuk fitur bonus percabangan pesan
+  parentMessageId String?
+  parentMessage   Message?    @relation("MessageBranch", fields: [parentMessageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children        Message[]   @relation("MessageBranch")
+}
+
+// npx prisma generate
+// npx prisma migrate dev --name init
