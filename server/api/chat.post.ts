@@ -65,5 +65,5 @@ export default defineEventHandler(async (event) => {
     },
   });
 
-  return { response: aiResponse, role: "assistant" };
+  return { response: aiResponse, role: "assistant", isAIResponse: true };
 });

@@ -5,11 +5,23 @@ import { nextTick, ref, watch } from "vue";
 const { messages, input, send, isLoading } = useChat();
 
 const chatListRef = ref<HTMLElement | null>(null);
+const displayedContent = ref<{ [id: string]: string }>({});
+
+function scrollToBottom() {
+  nextTick(() => {
+    setTimeout(() => {
+      if (chatListRef.value) {
+        chatListRef.value.scrollTop = chatListRef.value.scrollHeight;
+      }
+    }, 50);
+  });
+}
 
 function handleEnter(e: KeyboardEvent) {
   if (e.ctrlKey && e.key === "Enter") {
     e.preventDefault();
     send();
+    scrollToBottom();
   }
 }
 
@@ -17,18 +29,75 @@ function formatAI(text: string) {
   return marked.parse(text);
 }
 
-watch(messages, async () => {
-  await nextTick();
-  if (chatListRef.value) {
-    chatListRef.value.scrollTop = chatListRef.value.scrollHeight;
+// Animasi typing untuk pesan Gemini
+function animateMessage(id: string, content: string) {
+  displayedContent.value[id] = "";
+  let i = 0;
+  const interval = setInterval(() => {
+    displayedContent.value[id] += content[i];
+    i++;
+    scrollToBottom();
+    if (i >= content.length) clearInterval(interval);
+  }, 20); // 20ms per huruf, bisa diubah
+}
+
+// Animasi per kata:
+// function animateMessage(id: string, content: string) {
+//   const words = content.split(" ");
+//   displayedContent.value[id] = "";
+//   let i = 0;
+//   const interval = setInterval(() => {
+//     displayedContent.value[id] += (i > 0 ? " " : "") + words[i];
+//     i++;
+//     scrollToBottom();
+//     if (i >= words.length) clearInterval(interval);
+//   }, 150); // 150ms per kata
+// }
+
+// Animasi per kalimat:
+// function animateMessage(id: string, content: string) {
+//   const sentences = content.split(/([.!?])\s*/);
+//   displayedContent.value[id] = "";
+//   let i = 0;
+//   const interval = setInterval(() => {
+//     displayedContent.value[id] += sentences[i];
+//     i++;
+//     scrollToBottom();
+//     if (i >= sentences.length) clearInterval(interval);
+//   }, 300); // 300ms per kalimat
+// }
+
+watch(messages, (newMessages, oldMessages) => {
+  scrollToBottom();
+
+  // Isi semua pesan lama ke displayedContent (langsung tampil penuh)
+  newMessages.forEach((msg) => {
+    if (!msg.isAIResponse) {
+      displayedContent.value[msg.id] = msg.content;
+    }
+  });
+
+  // Animasi hanya untuk pesan Gemini terbaru
+  const lastMsg = newMessages[newMessages.length - 1];
+  if (
+    lastMsg &&
+    lastMsg.role === "assistant" &&
+    lastMsg.isAIResponse &&
+    !displayedContent.value[lastMsg.id]
+  ) {
+    animateMessage(lastMsg.id, lastMsg.content);
   }
 });
 </script>
 
 <template>
-  <div class="relative h-full bg-white flex flex-col">
+  <div class="h-full bg-white flex flex-col">
     <!-- Chat Messages -->
-    <div ref="chatListRef" class="flex-1 overflow-y-auto p-6 space-y-4 pb-32">
+    <div
+      ref="chatListRef"
+      class="flex-1 overflow-y-auto p-6 space-y-4"
+      style="min-height: 0"
+    >
       <div
         v-for="m in messages"
         :key="m.id"
@@ -62,13 +131,16 @@ watch(messages, async () => {
             <span class="text-gray-500">Gemini is typing...</span>
           </span>
         </span>
-        <span v-else v-html="formatAI(m.content)"></span>
+        <span
+          v-else-if="m.role === 'assistant'"
+          v-html="formatAI(displayedContent[m.id] || '')"
+        ></span>
       </div>
     </div>
 
-    <!-- Input Box sticky/fixed at bottom -->
+    <!-- Input Box di bawah, tidak absolute -->
     <form
-      class="absolute left-0 right-0 bottom-0 p-4 border-t border-gray-200 bg-white flex gap-2"
+      class="p-4 border-t border-gray-200 bg-white flex gap-2"
       @submit.prevent="send"
     >
       <textarea
