@@ -30,7 +30,7 @@ function toggleSidebar() {
         >
           ☰
         </button>
-        <h1 class="font-semibold text-lg text-gray-800">Gemini Chat</h1>
+        <h1 class="font-semibold text-lg text-gray-800">ChatBot GoBlog</h1>
       </header>
 
       <!-- Chat window -->
