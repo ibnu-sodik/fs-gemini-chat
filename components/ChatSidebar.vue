@@ -24,31 +24,72 @@ function handleSelect(id: string) {
 
   <aside
     :class="[
-      'fixed md:static top-0 left-0 h-full w-64 bg-gray-100 p-4 flex flex-col border-r border-gray-200 z-40 transition-transform duration-300',
+      'fixed md:static top-0 left-0 h-full w-64 bg-gray-100 flex flex-col border-r border-gray-200 z-40 transition-transform duration-300',
       isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
     ]"
   >
-    <!-- New Chat Button -->
-    <button
-      @click="newChat"
-      class="mb-4 p-2 rounded flex items-center justify-start gap-2 cursor-pointer hover:bg-gray-200 text-gray-700"
+    <!-- Navbar Sidebar -->
+    <div
+      class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-100"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        height="20px"
-        viewBox="0 -960 960 960"
-        width="20px"
-        fill="#000"
+      <!-- Logo kiri -->
+      <div class="flex items-center gap-2">
+        <img src="/favicon.ico" alt="Logo" class="h-6 w-6" />
+        <span class="font-semibold text-gray-800">Gemini</span>
+      </div>
+      <!-- Tombol silang kanan (hanya mobile) -->
+      <button
+        v-if="isOpen"
+        class="md:hidden text-gray-500 hover:text-gray-800 text-xl"
+        @click="$emit('close')"
+        aria-label="Close sidebar"
       >
-        <path
-          d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"
-        />
-      </svg>
-      <span>New Chat</span>
-    </button>
+        &times;
+      </button>
+    </div>
+
+    <div class="flex-1 flex flex-col h-full max-h-24 min-h-0">
+      <!-- New Chat Button -->
+      <button
+        @click="newChat"
+        class="p-2 rounded flex items-center justify-start gap-2 cursor-pointer hover:bg-gray-200 text-gray-700"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          height="20px"
+          viewBox="0 -960 960 960"
+          width="20px"
+          fill="#000"
+        >
+          <path
+            d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"
+          />
+        </svg>
+        <span>New Chat</span>
+      </button>
+      <!-- New Chat Button -->
+      <button
+        @click="newChat"
+        class="p-2 rounded flex items-center justify-start gap-2 cursor-pointer hover:bg-gray-200 text-gray-700"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          height="20px"
+          viewBox="0 -960 960 960"
+          width="20px"
+          fill="#000"
+        >
+          <path
+            d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"
+          />
+        </svg>
+        <span>New Chat</span>
+      </button>
+    </div>
 
     <!-- Chat Sessions -->
     <div class="flex-1 overflow-y-auto space-y-1">
+      <span class="p-2 text-sm text-gray-500">Chats</span>
       <div
         v-for="s in sessions"
         :key="s.id"

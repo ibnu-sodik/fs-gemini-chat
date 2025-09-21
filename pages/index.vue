@@ -20,17 +20,24 @@ function toggleSidebar() {
 
     <!-- Main content -->
     <div class="flex-1 flex flex-col h-full min-h-0">
-      <!-- Header (mobile only) -->
+      <!-- Navbar/Header (mobile & desktop) -->
       <header
-        class="md:hidden flex items-center justify-between p-4 border-b bg-white"
+        class="flex items-center justify-between p-4 bg-white border-b border-gray-100 shadow-xl"
       >
-        <button
-          @click="toggleSidebar"
-          class="text-gray-600 hover:text-gray-900"
-        >
-          ☰
-        </button>
-        <h1 class="font-semibold text-lg text-gray-800">ChatBot GoBlog</h1>
+        <div class="flex items-center gap-2">
+          <button
+            @click="toggleSidebar"
+            class="md:hidden text-gray-600 hover:text-gray-900"
+          >
+            ☰
+          </button>
+          <span class="font-semibold text-transparent">Gemini Chat</span>
+        </div>
+        <!-- Tambahkan menu/aksi lain di desktop jika perlu -->
+        <div class="hidden md:flex items-center gap-4">
+          <!-- Contoh: tombol profil, settings, dll -->
+          <!-- <button class="text-gray-600 hover:text-gray-900">Profile</button> -->
+        </div>
       </header>
 
       <!-- Chat window -->

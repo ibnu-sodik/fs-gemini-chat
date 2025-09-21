@@ -148,25 +148,26 @@ function resizeTextarea() {
     </div>
 
     <!-- Input Box di bawah, tidak absolute -->
-    <form class="px-4 pb-4" @submit.prevent="send">
-      <div class="border rounded-lg px-2 py-2 bg-white">
+    <form class="px-4 pb-4 pt-1 shadow-xl" @submit.prevent="send">
+      <div class="border rounded-lg px-2 py-2">
         <textarea
           v-model="input"
           @keydown.enter="handleEnter"
           @input="resizeTextarea"
           ref="inputRef"
           placeholder="Ketik pesan..."
-          class="w-full border-none outline-none px-2 py-2 resize-none min-h-[40px] max-h-[192px] overflow-y-auto bg-transparent"
+          class="w-full border-none outline-none px-2 resize-none min-h-[40px] max-h-[192px] overflow-y-auto bg-transparent"
           :disabled="isLoading"
           rows="1"
           style="line-height: 1.5"
         />
+
         <div class="flex justify-end mt-2">
           <button
             type="submit"
             :disabled="isLoading"
             :class="[
-              'flex items-center justify-center w-10 h-10 text-white rounded-full cursor-pointer shadow-md',
+              'flex items-center justify-center w-7 h-7 text-white rounded-full cursor-pointer shadow-md',
               isLoading ? 'bg-gray-200/70' : 'bg-black',
             ]"
             title="Kirim"
@@ -175,7 +176,7 @@ function resizeTextarea() {
               v-if="isLoading"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 -960 960 960"
-              class="h-5 w-5"
+              class="h-3 w-3 animate-ping"
               fill="#000"
             >
               <path
@@ -188,7 +189,7 @@ function resizeTextarea() {
             <svg
               v-else
               xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
+              class="h-3 w-3"
               viewBox="0 -960 960 960"
               fill="#fff"
             >
