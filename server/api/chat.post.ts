@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   const { PrismaClient } = await import("@prisma/client");
   const prisma = new PrismaClient();
 
-  const { prompt, role, sessionId } = body;
+  const { prompt, role, sessionId, model } = body;
   if (!prompt || !role || !sessionId)
     return { response: "", role: "assistant" };
 
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
   try {
     const genAI = new GoogleGenAI({ apiKey });
     const result = await genAI.models.generateContent({
-      model: "gemini-1.5-flash", // atau model lain sesuai kebutuhan
+      model: model,
       contents: [{ role: "user", parts: [{ text: prompt }] }],
     });
     aiResponse = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";

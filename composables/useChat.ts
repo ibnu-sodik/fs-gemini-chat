@@ -19,6 +19,7 @@ export function useChat() {
 
   const sessions = ref<ChatSession[]>([]);
   const activeSessionId = ref<string>("");
+  const activeModel = ref<string>("");
   const messages = ref<Message[]>([]);
   const input = ref("");
   const isLoading = ref(false);
@@ -52,6 +53,10 @@ export function useChat() {
     fetchMessages(id);
   }
 
+  function setModel(model: string = "gemini-1.5-pro") {
+    activeModel.value = model;
+  }
+
   async function newChat() {
     // Buat session baru
     const res = await fetch("/api/sessions", {
@@ -75,7 +80,10 @@ export function useChat() {
   }
 
   async function send() {
-    if (!input.value.trim() || !activeSessionId.value) return;
+    console.log("Model terpilih:", activeModel.value);
+    return;
+    if (!input.value.trim() || !activeSessionId.value || !activeModel.value)
+      return;
     isLoading.value = true;
     // Tampilkan pesan user langsung di chatwindow
     const userMsg: Message = {
@@ -101,6 +109,7 @@ export function useChat() {
         prompt: promptToSend,
         role: "user",
         sessionId: activeSessionId.value,
+        model: activeModel.value,
       }),
     });
     const data = await res.json();
@@ -119,6 +128,7 @@ export function useChat() {
     sessions,
     activeSessionId,
     setActive,
+    setModel,
     newChat,
     messages,
     input,
