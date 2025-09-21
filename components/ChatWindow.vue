@@ -49,11 +49,45 @@
     <!-- Input Box di bawah, tidak absolute -->
     <form class="px-4 pb-4 pt-1 shadow-xl" @submit.prevent="send">
       <div class="border rounded-lg px-2 py-2">
-        <div class="flex flex-row gap-2 items-center px-2 pb-2 shadow-md">
-          <span>Untuk file</span>
-          <span>Untuk file</span>
+        <div
+          v-if="uploadedFile"
+          class="flex flex-row gap-2 items-center px-2 pb-2 shadow-md"
+        >
+          <template v-if="isImage">
+            <img
+              :src="imagePreviewUrl"
+              alt="preview"
+              class="w-16 h-16 object-cover rounded cursor-pointer border border-gray-300"
+              @click="handlePreview"
+            />
+          </template>
+          <template v-else-if="isPdf">
+            <div
+              class="flex items-center gap-2 cursor-pointer p-2 border border-gray-300 rounded"
+              @click="showPdfModal = true"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 -960 960 960"
+                fill="red"
+                class="w-7 h-7"
+              >
+                <path
+                  d="M360-460h40v-80h40q17 0 28.5-11.5T480-580v-40q0-17-11.5-28.5T440-660h-80v200Zm40-120v-40h40v40h-40Zm120 120h80q17 0 28.5-11.5T640-500v-120q0-17-11.5-28.5T600-660h-80v200Zm40-40v-120h40v120h-40Zm120 40h40v-80h40v-40h-40v-40h40v-40h-80v200ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z"
+                />
+              </svg>
+              <span class="text-sm font-medium">{{ uploadedFile.name }}</span>
+            </div>
+          </template>
         </div>
 
+        <input
+          type="file"
+          accept="image/*,application/pdf"
+          @change="handleFileChange"
+          ref="fileInputRef"
+          class="hidden"
+        />
         <textarea
           v-model="input"
           @keydown.enter="handleEnter"
@@ -190,6 +224,56 @@
         </div>
       </div>
     </form>
+
+    <!-- Modal preview image -->
+    <div
+      v-if="showImageModal"
+      class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded shadow-lg pt-8 px-4 pb-4 relative">
+        <img
+          :src="imagePreviewUrl"
+          alt="preview"
+          class="max-w-[80vw] max-h-[80vh] rounded"
+        />
+        <button
+          @click="showImageModal = false"
+          class="absolute top-1 right-2 text-gray-700 cursor-pointer hover:text-gray-900"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+    <!-- Modal preview pdf -->
+    <div
+      v-if="showPdfModal"
+      class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+    >
+      <div
+        class="bg-white rounded shadow-lg pt-8 px-4 pb-4 relative max-w-[90vw] max-h-[90vh]"
+      >
+        <embed
+          :src="pdfPreviewUrl"
+          type="application/pdf"
+          class="w-[70vw] h-[80vh]"
+          @error="pdfLoadError = true"
+        />
+        <div v-if="pdfLoadError" class="text-center mt-4">
+          <p class="text-sm text-gray-700">
+            Preview PDF tidak didukung di perangkat ini.
+          </p>
+          <a :href="pdfPreviewUrl" download class="text-blue-600 underline"
+            >Download PDF</a
+          >
+        </div>
+        <button
+          @click="showPdfModal = false"
+          class="absolute top-1 right-2 text-gray-700 cursor-pointer hover:text-gray-900"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -211,6 +295,19 @@ const selectedModel = ref(modelOptions[0].value);
 const showFilesMenu = ref(false);
 
 const filesMenuRef = ref<HTMLElement | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const uploadedFile = ref<File | null>(null);
+const imagePreviewUrl = ref<string>("");
+const pdfPreviewUrl = ref<string>("");
+const showImageModal = ref(false);
+const showPdfModal = ref(false);
+const isImage = computed(
+  () => uploadedFile.value && uploadedFile.value.type.startsWith("image")
+);
+const isPdf = computed(
+  () => uploadedFile.value && uploadedFile.value.type === "application/pdf"
+);
+const pdfLoadError = ref(false);
 
 watch([messages, selectedModel], ([newMessages, val], [oldMessages]) => {
   scrollToBottom();
@@ -241,6 +338,72 @@ onMounted(() => {
 onBeforeMount(() => {
   document.removeEventListener("mousedown", handleClickOutside);
 });
+
+function handlePreview() {
+  if (isImage.value) {
+    showImageModal.value = true;
+  } else if (isPdf.value) {
+    pdfLoadError.value = false;
+    showPdfModal.value = true;
+  }
+}
+
+function handleFileChange(e: Event) {
+  const files = (e.target as HTMLInputElement).files;
+  if (!files || !files[0]) return;
+  uploadedFile.value = files[0];
+  pdfLoadError.value = false;
+  if (isImage.value) {
+    imagePreviewUrl.value = URL.createObjectURL(uploadedFile.value);
+    pdfPreviewUrl.value = "";
+  } else if (isPdf.value) {
+    pdfPreviewUrl.value = URL.createObjectURL(uploadedFile.value);
+    imagePreviewUrl.value = "";
+  } else {
+    alert("Only image and PDF files are supported.");
+    uploadedFile.value = null;
+    imagePreviewUrl.value = "";
+    pdfPreviewUrl.value = "";
+    showImageModal.value = false;
+    showPdfModal.value = false;
+    if (fileInputRef.value) fileInputRef.value.value = "";
+  }
+}
+
+function optionFiles() {
+  if (fileInputRef.value) fileInputRef.value.click();
+}
+
+function toggleFilesMenu() {
+  showFilesMenu.value = !showFilesMenu.value;
+}
+
+function addPhotosFiles() {
+  showFilesMenu.value = false;
+  optionFiles();
+}
+
+function createImage() {
+  showFilesMenu.value = false;
+  alert("Create Image clicked!");
+}
+
+function handleClickOutside(event: MouseEvent) {
+  if (
+    filesMenuRef.value &&
+    !filesMenuRef.value.contains(event.target as Node)
+  ) {
+    showFilesMenu.value = false;
+  }
+}
+
+function resizeTextarea() {
+  const el = inputRef.value;
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 192) + "px";
+  el.style.overflowY = el.scrollHeight > 192 ? "auto" : "hidden";
+}
 
 function scrollToBottom() {
   nextTick(() => {
@@ -301,35 +464,4 @@ function animateMessage(id: string, content: string) {
 //     if (i >= sentences.length) clearInterval(interval);
 //   }, 300); // 300ms per kalimat
 // }
-
-function toggleFilesMenu() {
-  showFilesMenu.value = !showFilesMenu.value;
-}
-
-function addPhotosFiles() {
-  showFilesMenu.value = false;
-  alert("Add photos and files clicked!");
-}
-
-function createImage() {
-  showFilesMenu.value = false;
-  alert("Create Image clicked!");
-}
-
-function handleClickOutside(event: MouseEvent) {
-  if (
-    filesMenuRef.value &&
-    !filesMenuRef.value.contains(event.target as Node)
-  ) {
-    showFilesMenu.value = false;
-  }
-}
-
-function resizeTextarea() {
-  const el = inputRef.value;
-  if (!el) return;
-  el.style.height = "auto";
-  el.style.height = Math.min(el.scrollHeight, 192) + "px";
-  el.style.overflowY = el.scrollHeight > 192 ? "auto" : "hidden";
-}
 </script>
