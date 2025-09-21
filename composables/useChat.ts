@@ -80,8 +80,6 @@ export function useChat() {
   }
 
   async function send() {
-    console.log("Model terpilih:", activeModel.value);
-    return;
     if (!input.value.trim() || !activeSessionId.value || !activeModel.value)
       return;
     isLoading.value = true;
