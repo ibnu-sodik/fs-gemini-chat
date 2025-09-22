@@ -32,8 +32,12 @@ export default defineEventHandler(async (event) => {
     const { PrismaClient } = await import("@prisma/client");
     prisma = new PrismaClient();
 
-    const { prompt, role, sessionId, model, files } = body;
-    if ((!prompt && (!files || files.length === 0)) || !role || !sessionId) {
+    const { prompt, message, role, sessionId, model, files } = body;
+
+    // Use prompt or message field
+    const userMessage = prompt || message;
+
+    if ((!userMessage && (!files || files.length === 0)) || !sessionId) {
       return { response: "", role: "assistant" };
     }
 
@@ -46,13 +50,14 @@ export default defineEventHandler(async (event) => {
 
     // Kirim prompt dan file ke Google Gemini
     let aiResponse = "";
+
     try {
       const genAI = new GoogleGenAI({ apiKey });
 
       const contents: Content[] = [{ role: "user", parts: [] }];
 
-      if (prompt) {
-        contents[0].parts.push({ text: prompt });
+      if (userMessage) {
+        contents[0].parts.push({ text: userMessage });
       }
 
       if (files && files.length > 0) {
@@ -76,10 +81,10 @@ export default defineEventHandler(async (event) => {
 
     // Simpan pesan user ke database
     let messageRecord = null;
-    if (prompt || (files && files.length > 0)) {
+    if (userMessage || (files && files.length > 0)) {
       messageRecord = await prisma.message.create({
         data: {
-          content: prompt || "[File only]",
+          content: userMessage || "[File only]",
           role: "user",
           sessionId,
         },
@@ -121,7 +126,12 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    return { response: aiResponse, role: "assistant", isAIResponse: true };
+    const responseData = {
+      response: aiResponse,
+      role: "assistant",
+      isAIResponse: true,
+    };
+    return responseData;
   } catch (error) {
     console.error("Chat API Error:", error);
     throw createError({

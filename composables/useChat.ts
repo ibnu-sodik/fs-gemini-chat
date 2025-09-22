@@ -23,6 +23,7 @@ const globalState = {
   input: ref(""),
   isLoading: ref(false),
   uploadedFiles: ref<any[]>([]),
+  isUpdatingSession: ref(false), // Flag to prevent reactivity conflicts
   initialized: false,
 };
 
@@ -35,6 +36,7 @@ export function useChat() {
   const input = globalState.input;
   const isLoading = globalState.isLoading;
   const uploadedFiles = globalState.uploadedFiles;
+  const isUpdatingSession = globalState.isUpdatingSession;
 
   async function fetchSessions(shouldFetchMessages: boolean = true) {
     const res = await fetch("/api/sessions");
@@ -70,7 +72,6 @@ export function useChat() {
       const encodedSessionId = encodeURIComponent(sessionId.trim());
       const url = `/api/messages?sessionId=${encodedSessionId}`;
 
-      console.log("Fetching messages from URL:", url);
       const res = await fetch(url);
 
       if (!res.ok) {
@@ -79,10 +80,6 @@ export function useChat() {
 
       const data = await res.json();
       messages.value = data.messages || [];
-
-      console.log(
-        `Loaded ${messages.value.length} messages for session ${sessionId}`
-      );
     } catch (error) {
       console.error("Error fetching messages:", error);
       // Set empty messages on error
@@ -144,9 +141,69 @@ export function useChat() {
     }
   }
 
+  async function updateSessionTitle(sessionId: string, title: string) {
+    try {
+      isUpdatingSession.value = true; // Set flag to prevent reactivity conflicts
+
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+
+      if (res.ok) {
+        // Update the session title in the sidebar
+        const sessionIndex = sessions.value.findIndex(
+          (s) => s.id === sessionId
+        );
+        if (sessionIndex !== -1) {
+          // Use nextTick to avoid immediate reactivity conflicts
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          sessions.value[sessionIndex].title = title;
+        }
+      }
+    } catch (error) {
+      console.error("Failed to update session title:", error);
+    } finally {
+      isUpdatingSession.value = false; // Reset flag
+    }
+  }
+
+  function generateTitleFromMessage(message: string): string {
+    // Take first 30 characters and clean up
+    const title = message.trim().slice(0, 30);
+    return title.length < message.trim().length ? title + "..." : title;
+  }
+
   async function send() {
     if (!input.value.trim() && uploadedFiles.value.length === 0) return;
-    if (!activeSessionId.value || !activeModel.value) return;
+
+    let currentSessionId = activeSessionId.value;
+    let shouldUpdateTitle = false;
+
+    // If no active session, create one
+    if (!currentSessionId) {
+      try {
+        currentSessionId = await newChat();
+        if (!currentSessionId) {
+          console.error("Failed to create new session");
+          return;
+        }
+        shouldUpdateTitle = true; // New session should get proper title
+      } catch (error) {
+        console.error("Error creating new session:", error);
+        return;
+      }
+    }
+
+    if (!activeModel.value) return;
+
+    // Store the message content for title generation and API call
+    const messageContent = input.value.trim();
+    const promptToSend = input.value;
+
+    // Clear input immediately for better UX
+    input.value = "";
 
     isLoading.value = true;
 
@@ -172,7 +229,7 @@ export function useChat() {
     const userMsg: Message = {
       id: "u-" + Date.now(),
       role: "user",
-      content: input.value,
+      content: promptToSend,
       files: filesData,
     };
     messages.value.push(userMsg);
@@ -185,8 +242,8 @@ export function useChat() {
     };
     messages.value.push(loadingMsg);
 
-    const promptToSend = input.value;
-    input.value = "";
+    // Clear uploaded files immediately
+    uploadedFiles.value = [];
 
     // Kirim ke backend
     try {
@@ -196,7 +253,7 @@ export function useChat() {
         body: JSON.stringify({
           prompt: promptToSend,
           role: "user",
-          sessionId: activeSessionId.value,
+          sessionId: currentSessionId,
           model: activeModel.value,
           files: filesData, // Sertakan file yang diunggah
         }),
@@ -222,8 +279,18 @@ export function useChat() {
 
       messages.value.push(assistantMsg);
 
-      // Hanya fetch sessions untuk update title (tanpa fetch messages)
-      await fetchSessions(false);
+      // Update session title if this was the first message
+      if (shouldUpdateTitle && messageContent) {
+        const newTitle = generateTitleFromMessage(messageContent);
+        // Calculate delay based on message length with buffer
+        const messageLength = data.response?.length || 1000;
+        const estimatedAnimationTime = messageLength * 30; // 30ms per character
+        const safeDelay = Math.max(estimatedAnimationTime + 2000, 5000); // At least 5 seconds
+
+        setTimeout(async () => {
+          await updateSessionTitle(currentSessionId, newTitle);
+        }, safeDelay);
+      }
     } catch (error) {
       console.error("Send message error:", error);
 
@@ -239,9 +306,6 @@ export function useChat() {
       };
       messages.value.push(errorMsg);
     }
-
-    // Setelah response ditampilkan, baru hapus thumbnail/file
-    uploadedFiles.value = [];
 
     isLoading.value = false;
   }
@@ -262,10 +326,14 @@ export function useChat() {
     setActiveSession,
     setModel,
     newChat,
+    updateSessionTitle,
+    generateTitleFromMessage,
     messages,
     input,
     send,
     isLoading,
     uploadedFiles,
+    isUpdatingSession,
+    fetchSessions,
   };
 }
