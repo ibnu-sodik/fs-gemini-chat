@@ -19,11 +19,11 @@
       >
         <!-- Pesan user: tampilkan file dan/atau text -->
         <template v-if="m.role === 'user'">
-          <!-- Tampilkan file dari DB jika ada -->
+          <!-- Tampilkan file dari DB atau dari local bubble jika baru dikirim -->
           <template v-if="m.files && m.files.length">
             <div class="flex flex-row gap-2 items-center flex-wrap mb-2">
-              <template v-for="(file, fidx) in m.files" :key="file.id">
-                <template v-if="file.type.startsWith('image')">
+              <template v-for="(file, fidx) in m.files" :key="file.id || fidx">
+                <template v-if="file.type && file.type.startsWith('image')">
                   <img
                     :src="file.base64"
                     alt="preview"
@@ -92,7 +92,7 @@
     <form class="px-4 pb-4 pt-1 shadow-xl" @submit.prevent="handleSend">
       <div class="border rounded-lg px-2 py-2">
         <div
-          v-if="uploadedFiles.length"
+          v-show="uploadedFiles.length && showThumbnails"
           class="flex flex-row gap-2 items-center px-2 pb-2 shadow-md flex-wrap"
         >
           <template v-for="(file, idx) in uploadedFiles" :key="file.id">
@@ -343,25 +343,8 @@
 </template>
 
 <script setup lang="ts">
-// Preview file dari DB
-function handleDbPreview(file: any) {
-  if (file.type.startsWith("image")) {
-    modalImageUrl.value = file.base64;
-    showImageModal.value = true;
-  } else if (file.type === "application/pdf") {
-    modalPdfUrl.value = file.base64;
-    pdfLoadError.value = false;
-    showPdfModal.value = true;
-  } else {
-    // Untuk file selain image/pdf, bisa download
-    window.open(file.base64, "_blank");
-  }
-}
-function handleSend() {
-  // Hapus thumbnail/file dari inputan sebelum loading muncul
-  uploadedFiles.value = [];
-  send();
-}
+// State untuk hide thumbnail setelah kirim
+const showThumbnails = ref(false);
 import { marked } from "marked";
 import { useChat } from "@/composables/useChat";
 import { nextTick, ref, watch } from "vue";
@@ -388,6 +371,8 @@ const modalPdfUrl = ref("");
 const pdfLoadError = ref(false);
 
 watch([messages, selectedModel], ([newMessages, val], [oldMessages]) => {
+  // Jika pesan sudah di-refresh (balasan Gemini sudah masuk), tampilkan thumbnail lagi untuk input berikutnya
+  showThumbnails.value = false;
   scrollToBottom();
   newMessages.forEach((msg: any) => {
     if (!msg.isAIResponse) {
@@ -416,6 +401,24 @@ onMounted(() => {
 onBeforeMount(() => {
   document.removeEventListener("mousedown", handleClickOutside);
 });
+
+function handleDbPreview(file: any) {
+  if (file.type.startsWith("image")) {
+    modalImageUrl.value = file.base64;
+    showImageModal.value = true;
+  } else if (file.type === "application/pdf") {
+    modalPdfUrl.value = file.base64;
+    pdfLoadError.value = false;
+    showPdfModal.value = true;
+  } else {
+    // Untuk file selain image/pdf, bisa download
+    window.open(file.base64, "_blank");
+  }
+}
+function handleSend() {
+  showThumbnails.value = false;
+  send();
+}
 
 function handlePreview(idx: number) {
   const fileObj = uploadedFiles.value[idx];
@@ -447,6 +450,7 @@ function handleFileChange(e: Event) {
     });
   }
   pdfLoadError.value = false;
+  showThumbnails.value = true;
   if (fileInputRef.value) fileInputRef.value.value = "";
 }
 

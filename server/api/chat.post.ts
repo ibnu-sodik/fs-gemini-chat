@@ -18,7 +18,6 @@ interface Content {
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  console.log("Request received:", body); // Log permintaan untuk debugging
 
   const apiKey = process.env.GOOGLE_API_KEY;
 

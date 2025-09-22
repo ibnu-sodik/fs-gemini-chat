@@ -5,6 +5,7 @@ export interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  files?: any[];
 }
 
 export interface ChatSession {
@@ -86,13 +87,34 @@ export function useChat() {
 
     isLoading.value = true;
 
-    // Tampilkan pesan user langsung di chatwindow
+    // Proses file yang diunggah
+    const filesData = await Promise.all(
+      uploadedFiles.value.map(async (file) => {
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (error) => reject(error);
+          reader.readAsDataURL(file.file);
+        });
+        return {
+          id: file.id,
+          name: file.name,
+          type: file.file.type,
+          base64,
+        };
+      })
+    );
+
+    // Tampilkan pesan user langsung di chatwindow, beserta file
     const userMsg: Message = {
       id: "u-" + Date.now(),
       role: "user",
       content: input.value,
+      files: filesData,
     };
     messages.value.push(userMsg);
+
+    // Jangan hapus thumbnail/file di sini, biarkan tetap ada sampai balasan Gemini diterima
 
     // Tampilkan bubble loading balasan
     const loadingMsg: Message = {
@@ -104,25 +126,6 @@ export function useChat() {
 
     const promptToSend = input.value;
     input.value = "";
-
-    // Proses file yang diunggah
-    const filesData = await Promise.all(
-      uploadedFiles.value.map(async (file) => {
-        const base64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = (error) => reject(error);
-          reader.readAsDataURL(file.file);
-        });
-        return {
-          name: file.name,
-          type: file.file.type,
-          base64,
-        };
-      })
-    );
-
-    console.log("Sending files to backend:", filesData); // Log untuk debugging
 
     // Kirim ke backend
     const res = await fetch("/api/chat", {
@@ -147,7 +150,7 @@ export function useChat() {
     await fetchMessages(activeSessionId.value);
     await fetchSessions();
 
-    // Kosongkan file setelah kirim
+    // Setelah balasan Gemini diterima, baru hapus thumbnail/file
     uploadedFiles.value = [];
 
     isLoading.value = false;
