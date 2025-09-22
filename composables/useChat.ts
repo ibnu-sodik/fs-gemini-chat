@@ -14,18 +14,27 @@ export interface ChatSession {
   title: string;
 }
 
-let chatState: any;
+// Global reactive state
+const globalState = {
+  sessions: ref<ChatSession[]>([]),
+  activeSessionId: ref<string>(""),
+  activeModel: ref<string>(""),
+  messages: ref<Message[]>([]),
+  input: ref(""),
+  isLoading: ref(false),
+  uploadedFiles: ref<any[]>([]),
+  initialized: false,
+};
 
 export function useChat() {
-  if (chatState) return chatState;
-
-  const sessions = ref<ChatSession[]>([]);
-  const activeSessionId = ref<string>("");
-  const activeModel = ref<string>("");
-  const messages = ref<Message[]>([]);
-  const input = ref("");
-  const isLoading = ref(false);
-  const uploadedFiles = ref<any[]>([]); // Tambahkan ref untuk file yang diunggah
+  // Use global reactive state
+  const sessions = globalState.sessions;
+  const activeSessionId = globalState.activeSessionId;
+  const activeModel = globalState.activeModel;
+  const messages = globalState.messages;
+  const input = globalState.input;
+  const isLoading = globalState.isLoading;
+  const uploadedFiles = globalState.uploadedFiles;
 
   async function fetchSessions(shouldFetchMessages: boolean = true) {
     const res = await fetch("/api/sessions");
@@ -46,9 +55,39 @@ export function useChat() {
   }
 
   async function fetchMessages(sessionId: string) {
-    const res = await fetch(`/api/messages?sessionId=${sessionId}`);
-    const data = await res.json();
-    messages.value = data.messages;
+    try {
+      // Validate sessionId before making request
+      if (
+        !sessionId ||
+        typeof sessionId !== "string" ||
+        sessionId.trim().length === 0
+      ) {
+        console.warn("Invalid sessionId provided:", sessionId);
+        messages.value = [];
+        return;
+      }
+
+      const encodedSessionId = encodeURIComponent(sessionId.trim());
+      const url = `/api/messages?sessionId=${encodedSessionId}`;
+
+      console.log("Fetching messages from URL:", url);
+      const res = await fetch(url);
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      messages.value = data.messages || [];
+
+      console.log(
+        `Loaded ${messages.value.length} messages for session ${sessionId}`
+      );
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      // Set empty messages on error
+      messages.value = [];
+    }
   }
 
   function setActive(id: string) {
@@ -56,6 +95,27 @@ export function useChat() {
     fetchMessages(id);
   }
 
+  async function setActiveSession(id: string) {
+    // Validate sessionId
+    if (!id || typeof id !== "string" || id.trim().length === 0) {
+      console.warn("Invalid sessionId provided to setActiveSession:", id);
+      return;
+    }
+
+    const cleanId = id.trim();
+
+    // Prevent duplicate calls for the same session
+    if (activeSessionId.value === cleanId) {
+      return;
+    }
+
+    activeSessionId.value = cleanId;
+
+    // Clear current messages first
+    messages.value = [];
+
+    await fetchMessages(cleanId);
+  }
   function setModel(model: string = "gemini-1.5-pro") {
     activeModel.value = model;
   }
@@ -73,11 +133,13 @@ export function useChat() {
       activeSessionId.value = data.session.id;
       messages.value = [];
       await fetchSessions();
+      return data.session.id; // Return session ID for navigation
     } else {
       await fetchSessions();
       if (sessions.value.length > 0) {
         activeSessionId.value = sessions.value[sessions.value.length - 1].id;
         messages.value = [];
+        return activeSessionId.value; // Return session ID for navigation
       }
     }
   }
@@ -184,19 +246,26 @@ export function useChat() {
     isLoading.value = false;
   }
 
-  onMounted(fetchSessions);
+  // Initialize only once
+  if (!globalState.initialized) {
+    // Don't auto-fetch messages on initialization, let route handle it
+    onMounted(() => {
+      fetchSessions(false); // Don't fetch messages automatically
+    });
+    globalState.initialized = true;
+  }
 
-  chatState = {
+  return {
     sessions,
     activeSessionId,
     setActive,
+    setActiveSession,
     setModel,
     newChat,
     messages,
     input,
     send,
     isLoading,
-    uploadedFiles, // Ekspor uploadedFiles
+    uploadedFiles,
   };
-  return chatState;
 }

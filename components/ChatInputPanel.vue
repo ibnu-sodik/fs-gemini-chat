@@ -655,7 +655,7 @@ function transcribeAudioFile(idx: number) {
       if (!res.ok) {
         // Handle API errors
         if (data.error?.code === "insufficient_quota") {
-          toast.error("Kuota OpenAI habis. Silakan periksa billing Anda.", {
+          toast.error("Kouta untuk request penuh.", {
             position: "top-right",
             autoClose: 5000,
           });
