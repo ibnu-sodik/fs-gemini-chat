@@ -50,40 +50,60 @@
     <form class="px-4 pb-4 pt-1 shadow-xl" @submit.prevent="send">
       <div class="border rounded-lg px-2 py-2">
         <div
-          v-if="uploadedFile"
-          class="flex flex-row gap-2 items-center px-2 pb-2 shadow-md"
+          v-if="uploadedFiles.length"
+          class="flex flex-row gap-2 items-center px-2 pb-2 shadow-md flex-wrap"
         >
-          <template v-if="isImage">
-            <img
-              :src="imagePreviewUrl"
-              alt="preview"
-              class="w-16 h-16 object-cover rounded cursor-pointer border border-gray-300"
-              @click="handlePreview"
-            />
-          </template>
-          <template v-else-if="isPdf">
-            <div
-              class="flex items-center gap-2 cursor-pointer p-2 border border-gray-300 rounded"
-              @click="showPdfModal = true"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 -960 960 960"
-                fill="red"
-                class="w-7 h-7"
-              >
-                <path
-                  d="M360-460h40v-80h40q17 0 28.5-11.5T480-580v-40q0-17-11.5-28.5T440-660h-80v200Zm40-120v-40h40v40h-40Zm120 120h80q17 0 28.5-11.5T640-500v-120q0-17-11.5-28.5T600-660h-80v200Zm40-40v-120h40v120h-40Zm120 40h40v-80h40v-40h-40v-40h40v-40h-80v200ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z"
+          <template v-for="(file, idx) in uploadedFiles" :key="file.id">
+            <template v-if="file.isImage">
+              <div class="relative group">
+                <img
+                  :src="file.previewUrl"
+                  alt="preview"
+                  class="w-16 h-16 object-cover rounded cursor-pointer border border-gray-300"
+                  @click="handlePreview(idx)"
                 />
-              </svg>
-              <span class="text-sm font-medium">{{ uploadedFile.name }}</span>
-            </div>
+                <button
+                  @click="removeFile(idx)"
+                  class="absolute top-0.5 right-0.5 bg-white rounded-full border border-gray-300 w-4 h-4 flex items-center justify-center text-xs text-gray-700 opacity-80 cursor-pointer group-hover:opacity-100"
+                  title="Hapus file"
+                >
+                  ✕
+                </button>
+              </div>
+            </template>
+            <template v-else-if="file.isPdf">
+              <div
+                class="relative flex items-center gap-2 cursor-pointer p-2 h-16 border border-gray-300 rounded"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 -960 960 960"
+                  fill="red"
+                  class="w-7 h-7"
+                >
+                  <path
+                    d="M360-460h40v-80h40q17 0 28.5-11.5T480-580v-40q0-17-11.5-28.5T440-660h-80v200Zm40-120v-40h40v40h-40Zm120 120h80q17 0 28.5-11.5T640-500v-120q0-17-11.5-28.5T600-660h-80v200Zm40-40v-120h40v120h-40Zm120 40h40v-80h40v-40h-40v-40h40v-40h-80v200ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z"
+                  />
+                </svg>
+                <span class="text-sm font-medium" @click="handlePreview(idx)">{{
+                  file.name
+                }}</span>
+                <button
+                  @click="removeFile(idx)"
+                  class="absolute top-0.5 right-0.5 bg-white rounded-full border border-gray-300 w-5 h-5 flex items-center justify-center text-xs text-gray-700 opacity-80 cursor-pointer hover:opacity-100"
+                  title="Hapus file"
+                >
+                  ✕
+                </button>
+              </div>
+            </template>
           </template>
         </div>
 
         <input
           type="file"
           accept="image/*,application/pdf"
+          multiple
           @change="handleFileChange"
           ref="fileInputRef"
           class="hidden"
@@ -232,7 +252,7 @@
     >
       <div class="bg-white rounded shadow-lg pt-8 px-4 pb-4 relative">
         <img
-          :src="imagePreviewUrl"
+          :src="modalImageUrl"
           alt="preview"
           class="max-w-[80vw] max-h-[80vh] rounded"
         />
@@ -253,7 +273,7 @@
         class="bg-white rounded shadow-lg pt-8 px-4 pb-4 relative max-w-[90vw] max-h-[90vh]"
       >
         <embed
-          :src="pdfPreviewUrl"
+          :src="modalPdfUrl"
           type="application/pdf"
           class="w-[70vw] h-[80vh]"
           @error="pdfLoadError = true"
@@ -262,7 +282,7 @@
           <p class="text-sm text-gray-700">
             Preview PDF tidak didukung di perangkat ini.
           </p>
-          <a :href="pdfPreviewUrl" download class="text-blue-600 underline"
+          <a :href="modalPdfUrl" download class="text-blue-600 underline"
             >Download PDF</a
           >
         </div>
@@ -296,17 +316,20 @@ const showFilesMenu = ref(false);
 
 const filesMenuRef = ref<HTMLElement | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
-const uploadedFile = ref<File | null>(null);
-const imagePreviewUrl = ref<string>("");
-const pdfPreviewUrl = ref<string>("");
+const uploadedFiles = ref<
+  Array<{
+    id: string;
+    file: File;
+    name: string;
+    isImage: boolean;
+    isPdf: boolean;
+    previewUrl: string;
+  }>
+>([]);
 const showImageModal = ref(false);
 const showPdfModal = ref(false);
-const isImage = computed(
-  () => uploadedFile.value && uploadedFile.value.type.startsWith("image")
-);
-const isPdf = computed(
-  () => uploadedFile.value && uploadedFile.value.type === "application/pdf"
-);
+const modalImageUrl = ref("");
+const modalPdfUrl = ref("");
 const pdfLoadError = ref(false);
 
 watch([messages, selectedModel], ([newMessages, val], [oldMessages]) => {
@@ -339,10 +362,13 @@ onBeforeMount(() => {
   document.removeEventListener("mousedown", handleClickOutside);
 });
 
-function handlePreview() {
-  if (isImage.value) {
+function handlePreview(idx: number) {
+  const fileObj = uploadedFiles.value[idx];
+  if (fileObj.isImage) {
+    modalImageUrl.value = fileObj.previewUrl;
     showImageModal.value = true;
-  } else if (isPdf.value) {
+  } else if (fileObj.isPdf) {
+    modalPdfUrl.value = fileObj.previewUrl;
     pdfLoadError.value = false;
     showPdfModal.value = true;
   }
@@ -350,28 +376,31 @@ function handlePreview() {
 
 function handleFileChange(e: Event) {
   const files = (e.target as HTMLInputElement).files;
-  if (!files || !files[0]) return;
-  uploadedFile.value = files[0];
-  pdfLoadError.value = false;
-  if (isImage.value) {
-    imagePreviewUrl.value = URL.createObjectURL(uploadedFile.value);
-    pdfPreviewUrl.value = "";
-  } else if (isPdf.value) {
-    pdfPreviewUrl.value = URL.createObjectURL(uploadedFile.value);
-    imagePreviewUrl.value = "";
-  } else {
-    alert("Only image and PDF files are supported.");
-    uploadedFile.value = null;
-    imagePreviewUrl.value = "";
-    pdfPreviewUrl.value = "";
-    showImageModal.value = false;
-    showPdfModal.value = false;
-    if (fileInputRef.value) fileInputRef.value.value = "";
+  if (!files || files.length === 0) return;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const isImage = file.type.startsWith("image");
+    const isPdf = file.type === "application/pdf";
+    if (!isImage && !isPdf) continue;
+    uploadedFiles.value.push({
+      id: `${file.name}-${Date.now()}-${Math.random()}`,
+      file,
+      name: file.name,
+      isImage,
+      isPdf,
+      previewUrl: URL.createObjectURL(file),
+    });
   }
+  pdfLoadError.value = false;
+  if (fileInputRef.value) fileInputRef.value.value = "";
 }
 
 function optionFiles() {
   if (fileInputRef.value) fileInputRef.value.click();
+}
+
+function removeFile(idx: number) {
+  uploadedFiles.value.splice(idx, 1);
 }
 
 function toggleFilesMenu() {
