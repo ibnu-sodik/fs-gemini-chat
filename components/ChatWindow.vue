@@ -14,7 +14,6 @@
           m.role === 'user'
             ? 'max-w-[80vw] md:max-w-xl rounded-lg shadow ml-auto bg-gray-200 text-gray-900'
             : 'mr-auto',
-          m.role === 'assistant' ? 'break-words' : '',
         ]"
       >
         <!-- Pesan user: tampilkan file dan/atau text -->
@@ -88,9 +87,88 @@
       </div>
     </div>
 
-    <!-- Input Box di bawah, tidak absolute -->
-    <form class="px-4 pb-4 pt-1 shadow-xl" @submit.prevent="handleSend">
-      <div class="border rounded-lg px-2 py-2">
+    <div class="px-4 pb-4 pt-1 shadow-xl">
+      <div
+        id="div-recording"
+        v-show="showRecording"
+        class="rounded-full border p-2 bg-white flex flex-row items-center justify-between"
+      >
+        <div class="flex justify-start gap-2 items-center">
+          <button
+            type="button"
+            class="flex items-center justify-center w-7 h-7 rounded-full hover:bg-gray-200 cursor-not-allowed"
+            title="Add Files and more /"
+            disabled
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 stroke-2 text-gray-900"
+              viewBox="0 -960 960 960"
+              fill="#000"
+            >
+              <path
+                d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"
+              />
+            </svg>
+          </button>
+        </div>
+        <div style="min-width: 180px">
+          <!-- wavesurfer.js visualizer -->
+          <div
+            v-show="isRecording"
+            ref="wavesurferRef"
+            style="
+              width: 180px;
+              height: 40px;
+              background: #f3f3f3;
+              border-radius: 8px;
+            "
+          ></div>
+          <span v-if="!isRecording && recordedAudio">Rekaman selesai</span>
+          <span v-else-if="!isRecording">Siap merekam</span>
+        </div>
+        <div class="flex justify-end gap-2 items-center">
+          <button
+            type="button"
+            class="flex items-center justify-center w-7 h-7 rounded-full hover:bg-gray-200 cursor-pointer"
+            title="Cancel"
+            @click="cancelRecording"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 -960 960 960"
+              class="h-5 w-5"
+              fill="#000"
+            >
+              <path
+                d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="flex items-center justify-center w-7 h-7 rounded-full hover:bg-gray-200 cursor-pointer"
+            title="Done"
+            @click="confirmRecording"
+            :disabled="!recordedAudio"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 -960 960 960"
+              class="h-5 w-5"
+              fill="#000"
+            >
+              <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="div-inputan"
+        v-show="!showRecording"
+        class="border rounded-lg px-2 py-2"
+      >
         <div
           v-show="uploadedFiles.length && showThumbnails"
           class="flex flex-row gap-2 items-center px-2 pb-2 shadow-md flex-wrap"
@@ -139,12 +217,147 @@
                 </button>
               </div>
             </template>
+            <template v-else-if="file.isAudio">
+              <div
+                class="relative flex items-center gap-2 cursor-pointer p-2 h-16 border border-gray-300 rounded bg-gray-50"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  class="w-7 h-7 text-blue-600"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 19V6l12-2v13"
+                  />
+                </svg>
+                <span class="text-sm font-medium">{{ file.name }}</span>
+                <template v-if="audioStates[idx]?.status === 'playing'">
+                  <button
+                    @click="() => pauseAudio(idx)"
+                    class="cursor-pointer"
+                    title="Pause"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 -960 960 960"
+                      class="h-5 w-5"
+                      fill="#000"
+                    >
+                      <path
+                        d="M360-320h80v-320h-80v320Zm160 0h80v-320h-80v320ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    @click="() => stopAudio(idx)"
+                    class="cursor-pointer"
+                    title="Stop"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-5 w-5"
+                      viewBox="0 -960 960 960"
+                      fill="#000"
+                    >
+                      <path
+                        d="M320-320h320v-320H320v320ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    @click="() => transcribeAudioFile(idx)"
+                    class="ml-2 px-2 py-1 bg-green-100 rounded text-xs text-green-700 hover:bg-green-200"
+                    title="Transcribe"
+                  >
+                    Transcribe
+                  </button>
+                </template>
+                <template v-else-if="audioStates[idx]?.status === 'paused'">
+                  <button
+                    @click="() => playAudio(idx)"
+                    class="cursor-pointer"
+                    title="Play"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 -960 960 960"
+                      class="h-5 w-5"
+                      fill="#000"
+                    >
+                      <path
+                        d="m380-300 280-180-280-180v360ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    @click="() => stopAudio(idx)"
+                    class="cursor-pointer"
+                    title="Stop"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-5 w-5"
+                      viewBox="0 -960 960 960"
+                      fill="#000"
+                    >
+                      <path
+                        d="M320-320h320v-320H320v320ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    @click="() => transcribeAudioFile(idx)"
+                    class="ml-2 px-2 py-1 bg-green-100 rounded text-xs text-green-700 hover:bg-green-200"
+                    title="Transcribe"
+                  >
+                    Transcribe
+                  </button>
+                </template>
+                <template v-else>
+                  <button
+                    @click="() => playAudio(idx)"
+                    class="cursor-pointer"
+                    title="Play"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 -960 960 960"
+                      class="h-5 w-5"
+                      fill="#000"
+                    >
+                      <path
+                        d="m380-300 280-180-280-180v360ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    @click="() => transcribeAudioFile(idx)"
+                    class="ml-2 px-2 py-1 bg-green-100 rounded text-xs text-green-700 hover:bg-green-200"
+                    title="Transcribe"
+                  >
+                    Transcribe
+                  </button>
+                </template>
+                <button
+                  @click="removeFile(idx)"
+                  class="absolute top-0.5 right-0.5 bg-white rounded-full border border-gray-300 w-5 h-5 flex items-center justify-center text-xs text-gray-700 opacity-80 cursor-pointer hover:opacity-100"
+                  title="Hapus file"
+                >
+                  ✕
+                </button>
+              </div>
+            </template>
           </template>
         </div>
 
         <input
           type="file"
-          accept="image/*,application/pdf"
+          accept="image/*,application/pdf,audio/*"
           multiple
           @change="handleFileChange"
           ref="fileInputRef"
@@ -176,7 +389,7 @@
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  class="h-3 w-3 stroke-2 text-gray-900"
+                  class="h-5 w-5 stroke-2 text-gray-900"
                   viewBox="0 -960 960 960"
                   fill="#000"
                 >
@@ -247,8 +460,32 @@
           </div>
           <div></div>
           <div class="flex justify-end mt-2">
+            <!-- Tombol rekam suara -->
             <button
-              type="submit"
+              type="button"
+              class="mr-2 hover:bg-gray-200 flex items-center justify-center w-7 h-7 rounded-full cursor-pointer"
+              title="Rekam suara"
+              @click="
+                showRecording = true;
+                startRecording();
+              "
+              :class="isRecording ? 'bg-red-200' : ''"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 -960 960 960"
+                fill="#000"
+                class="h-5 w-5 stroke-2 text-gray-900"
+              >
+                <path
+                  d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-240Zm-40 520v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Zm40-360q17 0 28.5-11.5T520-520v-240q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v240q0 17 11.5 28.5T480-480Z"
+                />
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              @click="handleSend"
               :disabled="isLoading"
               :class="[
                 'flex items-center justify-center w-7 h-7 text-white rounded-full cursor-pointer shadow-md',
@@ -260,7 +497,7 @@
                 v-if="isLoading"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 -960 960 960"
-                class="h-3 w-3 animate-ping"
+                class="h-5 w-5 animate-ping"
                 fill="#000"
               >
                 <path
@@ -273,7 +510,7 @@
               <svg
                 v-else
                 xmlns="http://www.w3.org/2000/svg"
-                class="h-3 w-3 stroke-2"
+                class="h-5 w-5 stroke-2"
                 viewBox="0 -960 960 960"
                 fill="#fff"
               >
@@ -288,7 +525,7 @@
           </div>
         </div>
       </div>
-    </form>
+    </div>
 
     <!-- Modal preview image -->
     <div
@@ -343,6 +580,187 @@
 </template>
 
 <script setup lang="ts">
+// SSR-safe: import wavesurfer.js & plugin only on client
+let WaveSurfer: any = null;
+let MicrophonePlugin: any = null;
+const wavesurferRef = ref<HTMLDivElement | null>(null);
+let wavesurfer: any = null;
+// ...existing code...
+// State to toggle recording UI
+import { ref as vueRef } from "vue";
+const showRecording = vueRef(false);
+
+function cancelRecording() {
+  showRecording.value = false;
+  recordedAudio.value = "";
+  audioBlob.value = null;
+  if (isRecording.value) stopRecording();
+}
+
+async function confirmRecording() {
+  if (!recordedAudio.value) return;
+  showRecording.value = false;
+  // Transcribe and put result in input field
+  const res = await fetch("/api/speech", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ audioBase64: recordedAudio.value }),
+  });
+  const data = await res.json();
+  if (data.text) {
+    input.value = data.text;
+  } else {
+    alert("Gagal transkripsi audio");
+  }
+  recordedAudio.value = "";
+  audioBlob.value = null;
+}
+// Audio play/pause/stop state management
+import { reactive } from "vue";
+const audioStates = reactive<{
+  [idx: number]: {
+    status: "idle" | "playing" | "paused";
+    audio?: HTMLAudioElement;
+  };
+}>({});
+
+function playAudio(idx: number) {
+  const fileObj = uploadedFiles.value[idx];
+  if (!fileObj || !fileObj.isAudio) return;
+  // Stop any other playing audio
+  Object.keys(audioStates).forEach((key) => {
+    const i = Number(key);
+    if (audioStates[i]?.audio && i !== idx) {
+      audioStates[i].audio!.pause();
+      audioStates[i].audio!.currentTime = 0;
+      audioStates[i].status = "idle";
+    }
+  });
+  // If already have audio instance, resume
+  if (audioStates[idx]?.audio) {
+    audioStates[idx].audio!.play();
+    audioStates[idx].status = "playing";
+    return;
+  }
+  // Create new audio instance
+  const audio = new Audio(fileObj.previewUrl);
+  audioStates[idx] = { status: "playing", audio };
+  audio.play();
+  audio.onended = () => {
+    audioStates[idx].status = "idle";
+  };
+}
+
+function pauseAudio(idx: number) {
+  if (audioStates[idx]?.audio && audioStates[idx].status === "playing") {
+    audioStates[idx].audio!.pause();
+    audioStates[idx].status = "paused";
+  }
+}
+
+function stopAudio(idx: number) {
+  if (audioStates[idx]?.audio) {
+    audioStates[idx].audio!.pause();
+    audioStates[idx].audio!.currentTime = 0;
+    audioStates[idx].status = "idle";
+  }
+}
+
+function transcribeAudioFile(idx: number) {
+  const fileObj = uploadedFiles.value[idx];
+  if (!fileObj || !fileObj.isAudio) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64 = reader.result as string;
+    await transcribeAudio(base64);
+  };
+  reader.readAsDataURL(fileObj.file);
+}
+const isRecording = ref(false);
+const recordedAudio = ref<string>("");
+const audioBlob = ref<Blob | null>(null);
+let mediaRecorder: MediaRecorder | null = null;
+
+const liveStream = vueRef<MediaStream | null>(null);
+async function startRecording() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert("Browser tidak mendukung rekam suara");
+    return;
+  }
+  // Init wavesurfer visualizer
+  if (wavesurfer) {
+    wavesurfer.destroy();
+    wavesurfer = null;
+  }
+  if (wavesurferRef.value && WaveSurfer && MicrophonePlugin) {
+    wavesurfer = WaveSurfer.create({
+      container: wavesurferRef.value,
+      waveColor: "#3b82f6",
+      interact: false,
+      plugins: [
+        MicrophonePlugin.create({
+          bufferSize: 4096,
+          numberOfInputChannels: 1,
+          numberOfOutputChannels: 1,
+          constraints: { audio: true },
+        }),
+      ],
+    });
+    wavesurfer.microphone.start();
+  }
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder = new MediaRecorder(stream);
+  const chunks: BlobPart[] = [];
+  mediaRecorder.ondataavailable = (e) => {
+    if (e.data.size > 0) chunks.push(e.data);
+  };
+  mediaRecorder.onstop = async () => {
+    if (wavesurfer) {
+      wavesurfer.microphone.stop();
+      wavesurfer.destroy();
+      wavesurfer = null;
+    }
+    const blob = new Blob(chunks, { type: "audio/webm" });
+    audioBlob.value = blob;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      recordedAudio.value = reader.result as string;
+      await transcribeAudio(recordedAudio.value);
+    };
+    reader.readAsDataURL(blob);
+  };
+  mediaRecorder.start();
+  isRecording.value = true;
+}
+
+function stopRecording() {
+  if (mediaRecorder && isRecording.value) {
+    mediaRecorder.stop();
+    isRecording.value = false;
+    if (wavesurfer) {
+      wavesurfer.microphone.stop();
+      wavesurfer.destroy();
+      wavesurfer = null;
+    }
+  }
+}
+
+async function transcribeAudio(audioBase64: string) {
+  // Kirim audio ke backend untuk transkripsi
+  const res = await fetch("/api/speech", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ audioBase64 }),
+  });
+  const data = await res.json();
+  if (data.text) {
+    input.value = data.text;
+    // Otomatis kirim ke Gemini
+    handleSend();
+  } else {
+    alert("Gagal transkripsi audio");
+  }
+}
 // State untuk hide thumbnail setelah kirim
 const showThumbnails = ref(false);
 import { marked } from "marked";
@@ -396,9 +814,21 @@ watch([messages, selectedModel], ([newMessages, val], [oldMessages]) => {
 onMounted(() => {
   setModel(selectedModel.value);
   document.addEventListener("mousedown", handleClickOutside);
+  // Import wavesurfer.js & plugin only on client
+  (async () => {
+    WaveSurfer = (await import("wavesurfer.js")).default;
+    MicrophonePlugin = (
+      await import("wavesurfer.js/dist/plugin/wavesurfer.microphone.min.js")
+    ).default;
+  })();
 });
 
 onBeforeMount(() => {
+  document.removeEventListener("mousedown", handleClickOutside);
+});
+
+onUnmounted(() => {
+  // visualizer handled by wavesurfer.js
   document.removeEventListener("mousedown", handleClickOutside);
 });
 
@@ -439,13 +869,15 @@ function handleFileChange(e: Event) {
     const file = files[i];
     const isImage = file.type.startsWith("image");
     const isPdf = file.type === "application/pdf";
-    if (!isImage && !isPdf) continue;
+    const isAudio = file.type.startsWith("audio");
+    if (!isImage && !isPdf && !isAudio) continue;
     uploadedFiles.value.push({
       id: `${file.name}-${Date.now()}-${Math.random()}`,
       file,
       name: file.name,
       isImage,
       isPdf,
+      isAudio,
       previewUrl: URL.createObjectURL(file),
     });
   }
