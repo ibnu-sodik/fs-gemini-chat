@@ -23,6 +23,7 @@ export function useChat() {
   const messages = ref<Message[]>([]);
   const input = ref("");
   const isLoading = ref(false);
+  const uploadedFiles = ref<any[]>([]); // Tambahkan ref untuk file yang diunggah
 
   async function fetchSessions() {
     const res = await fetch("/api/sessions");
@@ -80,9 +81,11 @@ export function useChat() {
   }
 
   async function send() {
-    if (!input.value.trim() || !activeSessionId.value || !activeModel.value)
-      return;
+    if (!input.value.trim() && uploadedFiles.value.length === 0) return;
+    if (!activeSessionId.value || !activeModel.value) return;
+
     isLoading.value = true;
+
     // Tampilkan pesan user langsung di chatwindow
     const userMsg: Message = {
       id: "u-" + Date.now(),
@@ -90,6 +93,7 @@ export function useChat() {
       content: input.value,
     };
     messages.value.push(userMsg);
+
     // Tampilkan bubble loading balasan
     const loadingMsg: Message = {
       id: "loading",
@@ -97,8 +101,29 @@ export function useChat() {
       content: "",
     };
     messages.value.push(loadingMsg);
+
     const promptToSend = input.value;
     input.value = "";
+
+    // Proses file yang diunggah
+    const filesData = await Promise.all(
+      uploadedFiles.value.map(async (file) => {
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (error) => reject(error);
+          reader.readAsDataURL(file.file);
+        });
+        return {
+          name: file.name,
+          type: file.file.type,
+          base64,
+        };
+      })
+    );
+
+    console.log("Sending files to backend:", filesData); // Log untuk debugging
+
     // Kirim ke backend
     const res = await fetch("/api/chat", {
       method: "POST",
@@ -108,15 +133,23 @@ export function useChat() {
         role: "user",
         sessionId: activeSessionId.value,
         model: activeModel.value,
+        files: filesData, // Sertakan file yang diunggah
       }),
     });
+
     const data = await res.json();
+
     // Hapus bubble loading
     const idx = messages.value.findIndex((m) => m.id === "loading");
     if (idx !== -1) messages.value.splice(idx, 1);
+
     // Refresh messages dan sessions agar judul session update
     await fetchMessages(activeSessionId.value);
     await fetchSessions();
+
+    // Kosongkan file setelah kirim
+    uploadedFiles.value = [];
+
     isLoading.value = false;
   }
 
@@ -132,6 +165,7 @@ export function useChat() {
     input,
     send,
     isLoading,
+    uploadedFiles, // Ekspor uploadedFiles
   };
   return chatState;
 }

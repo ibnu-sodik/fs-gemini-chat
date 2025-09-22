@@ -7,7 +7,7 @@
       style="min-height: 0"
     >
       <div
-        v-for="m in messages"
+        v-for="(m, idx) in messages"
         :key="m.id"
         :class="[
           'px-4 py-2 w-fit ',
@@ -17,7 +17,51 @@
           m.role === 'assistant' ? 'break-words' : '',
         ]"
       >
-        <span v-if="m.role === 'user'">{{ m.content }}</span>
+        <!-- Pesan user: tampilkan file dan/atau text -->
+        <template v-if="m.role === 'user'">
+          <!-- Cek apakah pesan ini adalah pesan terakhir user dan ada file yang dikirim -->
+          <template v-if="idx === messages.length - 2 && uploadedFiles.length">
+            <div class="flex flex-row gap-2 items-center flex-wrap mb-2">
+              <template v-for="(file, fidx) in uploadedFiles" :key="file.id">
+                <template v-if="file.isImage">
+                  <img
+                    :src="file.previewUrl"
+                    alt="preview"
+                    class="w-16 h-16 object-cover rounded border border-gray-300 cursor-pointer"
+                    @click="handlePreview(fidx)"
+                  />
+                </template>
+                <template v-else-if="file.isPdf">
+                  <div
+                    class="flex items-center gap-2 cursor-pointer p-2 h-16 border border-gray-300 rounded"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 -960 960 960"
+                      fill="red"
+                      class="w-7 h-7"
+                    >
+                      <path
+                        d="M360-460h40v-80h40q17 0 28.5-11.5T480-580v-40q0-17-11.5-28.5T440-660h-80v200Zm40-120v-40h40v40h-40Zm120 120h80q17 0 28.5-11.5T640-500v-120q0-17-11.5-28.5T600-660h-80v200Zm40-40v-120h40v120h-40Zm120 40h40v-80h40v-40h-40v-40h40v-40h-80v200ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z"
+                      />
+                    </svg>
+                    <span
+                      class="text-sm font-medium"
+                      @click="handlePreview(fidx)"
+                      >{{ file.name }}</span
+                    >
+                  </div>
+                </template>
+              </template>
+            </div>
+            <span v-if="m.content">{{ m.content }}</span>
+          </template>
+          <!-- Jika tidak ada file, tampilkan hanya text -->
+          <template v-else>
+            <span>{{ m.content }}</span>
+          </template>
+        </template>
+        <!-- Pesan loading -->
         <span v-else-if="m.id === 'loading'">
           <span class="flex items-center gap-2">
             <svg class="animate-spin h-4 w-4 text-blue-500" viewBox="0 0 24 24">
@@ -39,6 +83,7 @@
             <span class="text-gray-500">Gemini is typing...</span>
           </span>
         </span>
+        <!-- Pesan Gemini -->
         <span
           v-else-if="m.role === 'assistant'"
           v-html="formatAI(displayedContent[m.id] || '')"
@@ -47,7 +92,7 @@
     </div>
 
     <!-- Input Box di bawah, tidak absolute -->
-    <form class="px-4 pb-4 pt-1 shadow-xl" @submit.prevent="send">
+    <form class="px-4 pb-4 pt-1 shadow-xl" @submit.prevent="handleSend">
       <div class="border rounded-lg px-2 py-2">
         <div
           v-if="uploadedFiles.length"
@@ -298,10 +343,15 @@
 </template>
 
 <script setup lang="ts">
+function handleSend() {
+  // Hapus thumbnail/file dari inputan sebelum loading muncul
+  uploadedFiles.value = [];
+  send();
+}
 import { marked } from "marked";
 import { useChat } from "@/composables/useChat";
 import { nextTick, ref, watch } from "vue";
-const { messages, input, send, isLoading, setModel } = useChat();
+const { messages, input, send, isLoading, setModel, uploadedFiles } = useChat();
 
 const chatListRef = ref<HTMLElement | null>(null);
 const displayedContent = ref<{ [id: string]: string }>({});
@@ -316,16 +366,7 @@ const showFilesMenu = ref(false);
 
 const filesMenuRef = ref<HTMLElement | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
-const uploadedFiles = ref<
-  Array<{
-    id: string;
-    file: File;
-    name: string;
-    isImage: boolean;
-    isPdf: boolean;
-    previewUrl: string;
-  }>
->([]);
+// uploadedFiles sekarang diambil dari useChat agar sinkron dengan backend
 const showImageModal = ref(false);
 const showPdfModal = ref(false);
 const modalImageUrl = ref("");
