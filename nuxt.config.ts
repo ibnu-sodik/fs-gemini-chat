@@ -5,7 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: false },
-  css: ["~/assets/css/main.css"],
+  css: ["~/assets/css/main.css", "vue3-toastify/dist/index.css"],
   vite: {
     plugins: [tailwindcss()],
   },

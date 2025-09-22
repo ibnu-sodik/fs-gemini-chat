@@ -31,13 +31,40 @@ export default defineEventHandler(async (event) => {
       headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
       body: formData as any,
     });
+
     if (!resp.ok) {
       const errTxt = await resp.text();
-      return { text: `[Gagal transkripsi (${resp.status})] ${errTxt}` };
+      let errorData;
+      try {
+        errorData = JSON.parse(errTxt);
+      } catch {
+        errorData = { message: errTxt };
+      }
+
+      // Set proper HTTP status and return error object
+      event.node.res.statusCode = resp.status;
+      return {
+        error: {
+          code: errorData.error?.code || "api_error",
+          message:
+            errorData.error?.message ||
+            `Gagal transkripsi (${resp.status}): ${errTxt}`,
+          type: errorData.error?.type || "transcription_error",
+        },
+      };
     }
+
     const text = await resp.text();
     return { text };
   } catch (e: any) {
-    return { text: `[Gagal transkripsi OpenAI] ${e.message || e}` };
+    // Set 500 status for server errors
+    event.node.res.statusCode = 500;
+    return {
+      error: {
+        code: "server_error",
+        message: e.message || "Gagal transkripsi audio",
+        type: "internal_error",
+      },
+    };
   }
 });

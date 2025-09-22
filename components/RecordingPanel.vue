@@ -29,9 +29,15 @@
         class="w-full rounded-lg overflow-hidden"
         :style="{ height: waveHeight + 'px' }"
       ></div>
-      <div v-if="!isRecording" class="text-xs text-gray-500 mt-2 text-center">
-        <span v-if="recordedAudio">Mohon tunggu</span>
-        <span v-else>Siap merekam</span>
+      <div v-if="!isRecording" class="w-full flex flex-col items-center">
+        <template v-if="recordedAudio">
+          <span class="text-gray-400 text-sm"
+            >Mohon tunggu, sedang melakukan Transkripsi</span
+          >
+          <!-- <audio :src="recordedAudio" controls class="w-full" /> -->
+          <!-- <div class="text-[10px] text-gray-400 mt-1">Playback (debug)</div> -->
+        </template>
+        <div v-else class="text-xs text-gray-500 text-center">Siap merekam</div>
       </div>
     </div>
     <div class="flex justify-end gap-2 items-center">
@@ -97,6 +103,7 @@
 import WaveSurfer from "wavesurfer.js";
 import RecordPlugin from "wavesurfer.js/dist/plugins/record.esm.js";
 import { ref, watch, onUnmounted, computed } from "vue";
+import { toast } from "vue3-toastify";
 
 const props = defineProps<{
   modelValue: boolean; // controls visibility
@@ -218,13 +225,40 @@ async function transcribeAudio(audioBase64: string) {
       body: JSON.stringify({ audioBase64 }),
     });
     const data = await res.json();
+
+    if (!res.ok) {
+      // Handle API errors
+      if (data.error?.code === "insufficient_quota") {
+        toast.error("Kuota OpenAI habis. Silakan periksa billing Anda.", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+      } else {
+        toast.error(data.error?.message || "Gagal transkripsi audio", {
+          position: "top-right",
+          autoClose: 5000,
+        });
+      }
+      return;
+    }
+
     if (data.text) {
       emit("transcribed", data.text);
+      toast.success("Audio berhasil ditranskripsi!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } else {
-      emit("error", "Gagal transkripsi audio");
+      toast.warning("Tidak ada teks yang terdeteksi dari audio", {
+        position: "top-right",
+        autoClose: 4000,
+      });
     }
   } catch (e: any) {
-    emit("error", e.message || "Gagal transkripsi audio");
+    toast.error(e.message || "Gagal transkripsi audio", {
+      position: "top-right",
+      autoClose: 5000,
+    });
   }
 }
 

@@ -52,7 +52,7 @@ function handleSelect(id: string) {
       <!-- New Chat Button -->
       <button
         @click="newChat"
-        class="p-2 rounded flex items-center justify-start gap-2 cursor-pointer hover:bg-gray-200 text-gray-700"
+        class="pl-4 px-2 py-2 rounded flex items-center justify-start gap-2 cursor-pointer hover:bg-gray-200 text-gray-700"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -70,7 +70,7 @@ function handleSelect(id: string) {
       <!-- New Chat Button -->
       <button
         @click="newChat"
-        class="p-2 rounded flex items-center justify-start gap-2 cursor-pointer hover:bg-gray-200 text-gray-700"
+        class="pl-4 px-2 py-2 rounded flex items-center justify-start gap-2 cursor-pointer hover:bg-gray-200 text-gray-700"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -89,13 +89,13 @@ function handleSelect(id: string) {
 
     <!-- Chat Sessions -->
     <div class="flex-1 overflow-y-auto space-y-1">
-      <span class="p-2 text-sm text-gray-500">Chats</span>
+      <span class="pl-4 p-2 text-sm text-gray-500">Chats</span>
       <div
         v-for="s in sessions"
         :key="s.id"
         @click="handleSelect(s.id)"
         :class="[
-          'p-2 rounded cursor-pointer transition-colors',
+          'pl-4 p-2 rounded cursor-pointer transition-colors',
           s.id === activeSessionId
             ? 'bg-gray-300/70 text-gray-800'
             : 'hover:bg-gray-200 text-gray-700',

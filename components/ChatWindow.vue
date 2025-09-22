@@ -163,6 +163,7 @@
 import RecordingPanel from "./RecordingPanel.vue";
 import ChatInputPanel from "./ChatInputPanel.vue";
 import { ref as vueRef } from "vue";
+import { toast } from "vue3-toastify";
 const showRecording = vueRef(false);
 
 // State untuk hide thumbnail setelah kirim
@@ -259,7 +260,10 @@ function onTranscribed(text: string) {
 }
 
 function onRecordingError(message: string) {
-  window.alert(message);
+  toast.error(message, {
+    position: "top-right",
+    autoClose: 5000,
+  });
 }
 
 function scrollToBottom(opts: { instant?: boolean } = {}) {
