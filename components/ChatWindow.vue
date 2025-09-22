@@ -112,20 +112,20 @@
             </svg>
           </button>
         </div>
-        <div style="min-width: 180px">
-          <!-- wavesurfer.js visualizer -->
+
+        <div class="flex-1 flex flex-col justify-center px-2">
           <div
             v-show="isRecording"
             ref="wavesurferRef"
-            style="
-              width: 180px;
-              height: 40px;
-              background: #f3f3f3;
-              border-radius: 8px;
-            "
+            class="h-10 w-full bg-gray-100 rounded-lg"
+            style="min-width: 0"
           ></div>
-          <span v-if="!isRecording && recordedAudio">Rekaman selesai</span>
-          <span v-else-if="!isRecording">Siap merekam</span>
+          <div v-if="!isRecording" class="text-xs text-gray-500 mt-2">
+            <span v-if="recordedAudio"
+              >Rekaman selesai, klik Done untuk transkripsi</span
+            >
+            <span v-else>Siap merekam</span>
+          </div>
         </div>
         <div class="flex justify-end gap-2 items-center">
           <button
@@ -580,21 +580,89 @@
 </template>
 
 <script setup lang="ts">
-// SSR-safe: import wavesurfer.js & plugin only on client
-let WaveSurfer: any = null;
-let MicrophonePlugin: any = null;
+import WaveSurfer from "wavesurfer.js";
+import RecordPlugin from "wavesurfer.js/dist/plugins/record.esm.js";
+import { ref as vueRef } from "vue";
+import { reactive } from "vue";
+const audioStates = reactive<{
+  [idx: number]: {
+    status: "idle" | "playing" | "paused";
+    audio?: HTMLAudioElement;
+  };
+}>({});
+
+// NOTE - Declaration var
 const wavesurferRef = ref<HTMLDivElement | null>(null);
 let wavesurfer: any = null;
-// ...existing code...
-// State to toggle recording UI
-import { ref as vueRef } from "vue";
+let record: any = null;
 const showRecording = vueRef(false);
 
+const isRecording = ref(false);
+const recordedAudio = ref<string>("");
+const audioBlob = ref<Blob | null>(null);
+let didCancelRecording = false;
+
+async function startRecording() {
+  didCancelRecording = false;
+
+  if (wavesurfer) {
+    wavesurfer.destroy();
+    wavesurfer = null;
+    record = null;
+  }
+  if (wavesurferRef.value) {
+    wavesurfer = WaveSurfer.create({
+      container: wavesurferRef.value,
+      waveColor: "#3b82f6",
+      progressColor: "#2563eb",
+    });
+    record = wavesurfer.registerPlugin(
+      RecordPlugin.create({
+        renderRecordedAudio: false,
+        scrollingWaveform: true,
+        continuousWaveform: false,
+      })
+    );
+    record.on("record-end", (blob: Blob) => {
+      audioBlob.value = blob;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        recordedAudio.value = reader.result as string;
+        if (!didCancelRecording) {
+          await transcribeAudio(recordedAudio.value);
+        }
+      };
+      reader.readAsDataURL(blob);
+      // destroy wavesurfer after record
+      if (wavesurfer) {
+        wavesurfer.destroy();
+        wavesurfer = null;
+        record = null;
+      }
+    });
+
+    record.on("record-progress", (time: number) => {
+      // Optionally update UI with time
+    });
+    await record.startRecording();
+    isRecording.value = true;
+  }
+}
+
+function stopRecording() {
+  if (record && isRecording.value) {
+    record.stopRecording();
+    isRecording.value = false;
+    // wavesurfer destroyed in record-end
+  }
+}
+
 function cancelRecording() {
+  didCancelRecording = true;
+  if (isRecording.value) stopRecording();
   showRecording.value = false;
   recordedAudio.value = "";
   audioBlob.value = null;
-  if (isRecording.value) stopRecording();
 }
 
 async function confirmRecording() {
@@ -615,14 +683,8 @@ async function confirmRecording() {
   recordedAudio.value = "";
   audioBlob.value = null;
 }
-// Audio play/pause/stop state management
-import { reactive } from "vue";
-const audioStates = reactive<{
-  [idx: number]: {
-    status: "idle" | "playing" | "paused";
-    audio?: HTMLAudioElement;
-  };
-}>({});
+
+// NOTE - Audio play/pause/stop state management
 
 function playAudio(idx: number) {
   const fileObj = uploadedFiles.value[idx];
@@ -676,74 +738,6 @@ function transcribeAudioFile(idx: number) {
   };
   reader.readAsDataURL(fileObj.file);
 }
-const isRecording = ref(false);
-const recordedAudio = ref<string>("");
-const audioBlob = ref<Blob | null>(null);
-let mediaRecorder: MediaRecorder | null = null;
-
-const liveStream = vueRef<MediaStream | null>(null);
-async function startRecording() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    alert("Browser tidak mendukung rekam suara");
-    return;
-  }
-  // Init wavesurfer visualizer
-  if (wavesurfer) {
-    wavesurfer.destroy();
-    wavesurfer = null;
-  }
-  if (wavesurferRef.value && WaveSurfer && MicrophonePlugin) {
-    wavesurfer = WaveSurfer.create({
-      container: wavesurferRef.value,
-      waveColor: "#3b82f6",
-      interact: false,
-      plugins: [
-        MicrophonePlugin.create({
-          bufferSize: 4096,
-          numberOfInputChannels: 1,
-          numberOfOutputChannels: 1,
-          constraints: { audio: true },
-        }),
-      ],
-    });
-    wavesurfer.microphone.start();
-  }
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  mediaRecorder = new MediaRecorder(stream);
-  const chunks: BlobPart[] = [];
-  mediaRecorder.ondataavailable = (e) => {
-    if (e.data.size > 0) chunks.push(e.data);
-  };
-  mediaRecorder.onstop = async () => {
-    if (wavesurfer) {
-      wavesurfer.microphone.stop();
-      wavesurfer.destroy();
-      wavesurfer = null;
-    }
-    const blob = new Blob(chunks, { type: "audio/webm" });
-    audioBlob.value = blob;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      recordedAudio.value = reader.result as string;
-      await transcribeAudio(recordedAudio.value);
-    };
-    reader.readAsDataURL(blob);
-  };
-  mediaRecorder.start();
-  isRecording.value = true;
-}
-
-function stopRecording() {
-  if (mediaRecorder && isRecording.value) {
-    mediaRecorder.stop();
-    isRecording.value = false;
-    if (wavesurfer) {
-      wavesurfer.microphone.stop();
-      wavesurfer.destroy();
-      wavesurfer = null;
-    }
-  }
-}
 
 async function transcribeAudio(audioBase64: string) {
   // Kirim audio ke backend untuk transkripsi
@@ -761,6 +755,7 @@ async function transcribeAudio(audioBase64: string) {
     alert("Gagal transkripsi audio");
   }
 }
+
 // State untuk hide thumbnail setelah kirim
 const showThumbnails = ref(false);
 import { marked } from "marked";
@@ -814,13 +809,6 @@ watch([messages, selectedModel], ([newMessages, val], [oldMessages]) => {
 onMounted(() => {
   setModel(selectedModel.value);
   document.addEventListener("mousedown", handleClickOutside);
-  // Import wavesurfer.js & plugin only on client
-  (async () => {
-    WaveSurfer = (await import("wavesurfer.js")).default;
-    MicrophonePlugin = (
-      await import("wavesurfer.js/dist/plugin/wavesurfer.microphone.min.js")
-    ).default;
-  })();
 });
 
 onBeforeMount(() => {
@@ -846,8 +834,11 @@ function handleDbPreview(file: any) {
   }
 }
 function handleSend() {
-  showThumbnails.value = false;
-  send();
+  // Only hide thumbnails if not recording
+  if (!showRecording.value) {
+    showThumbnails.value = false;
+    send();
+  }
 }
 
 function handlePreview(idx: number) {
