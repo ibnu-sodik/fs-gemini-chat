@@ -170,7 +170,7 @@ const showRecording = vueRef(false);
 const showThumbnails = ref(false);
 import { marked } from "marked";
 import { useChat } from "@/composables/useChat";
-import { nextTick, ref, watch } from "vue"; // retained for backward compatibility, not used now
+import { nextTick, ref, watch, onMounted } from "vue";
 const { messages, input, send, isLoading, setModel, uploadedFiles } = useChat();
 
 const chatListRef = ref<HTMLElement | null>(null);
@@ -192,26 +192,32 @@ const modalPdfUrl = ref("");
 const pdfLoadError = ref(false);
 
 // Pisahkan watcher: perubahan model tidak lagi menghapus thumbnail file yang sedang disiapkan user.
-watch(messages, (newMessages) => {
-  // Saat ada pesan baru (user kirim atau AI balas) kita sembunyikan thumbnail agar siap untuk input berikutnya
-  showThumbnails.value = false;
-  scrollToBottom();
-  newMessages.forEach((msg: any) => {
-    if (!msg.isAIResponse) {
-      displayedContent.value[msg.id] = msg.content;
-    }
-  });
-  const lastMsg = newMessages[newMessages.length - 1];
-  if (
-    lastMsg &&
-    lastMsg.role === "assistant" &&
-    lastMsg.isAIResponse &&
-    !displayedContent.value[lastMsg.id]
-  ) {
-    animateMessage(lastMsg.id, lastMsg.content);
-  }
-});
+watch(
+  messages,
+  (newMessages) => {
+    showThumbnails.value = false;
+    scrollToBottom();
 
+    // Set content untuk semua pesan non-AI response (user messages dan messages lama)
+    newMessages.forEach((msg: any) => {
+      if (!msg.isAIResponse) {
+        displayedContent.value[msg.id] = msg.content;
+      }
+    });
+
+    // Cari pesan AI baru yang perlu dianimasikan
+    const lastMsg = newMessages[newMessages.length - 1];
+    if (
+      lastMsg &&
+      lastMsg.role === "assistant" &&
+      lastMsg.isAIResponse &&
+      !displayedContent.value[lastMsg.id]
+    ) {
+      animateMessage(lastMsg.id, lastMsg.content);
+    }
+  },
+  { deep: true }
+);
 watch(selectedModel, (val) => {
   if (val) setModel(val);
 });
@@ -298,7 +304,7 @@ function animateMessage(id: string, content: string) {
     i++;
     scrollToBottom({ instant: false });
     if (i >= content.length) clearInterval(interval);
-  }, 60); // 20ms per huruf, bisa diubah
+  }, 30); // 20ms per huruf, bisa diubah
 }
 
 // Animasi per kata:

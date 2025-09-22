@@ -6,6 +6,7 @@ export interface Message {
   role: "user" | "assistant";
   content: string;
   files?: any[];
+  isAIResponse?: boolean;
 }
 
 export interface ChatSession {
@@ -26,11 +27,11 @@ export function useChat() {
   const isLoading = ref(false);
   const uploadedFiles = ref<any[]>([]); // Tambahkan ref untuk file yang diunggah
 
-  async function fetchSessions() {
+  async function fetchSessions(shouldFetchMessages: boolean = true) {
     const res = await fetch("/api/sessions");
     const data = await res.json();
     sessions.value = data.sessions;
-    if (sessions.value.length > 0) {
+    if (sessions.value.length > 0 && shouldFetchMessages) {
       // Jika session aktif tidak ada, pilih pertama
       if (
         !activeSessionId.value ||
@@ -39,7 +40,7 @@ export function useChat() {
         activeSessionId.value = sessions.value[0].id;
       }
       await fetchMessages(activeSessionId.value);
-    } else {
+    } else if (sessions.value.length === 0) {
       messages.value = [];
     }
   }
@@ -114,8 +115,6 @@ export function useChat() {
     };
     messages.value.push(userMsg);
 
-    // Jangan hapus thumbnail/file di sini, biarkan tetap ada sampai balasan Gemini diterima
-
     // Tampilkan bubble loading balasan
     const loadingMsg: Message = {
       id: "loading",
@@ -128,29 +127,58 @@ export function useChat() {
     input.value = "";
 
     // Kirim ke backend
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: promptToSend,
-        role: "user",
-        sessionId: activeSessionId.value,
-        model: activeModel.value,
-        files: filesData, // Sertakan file yang diunggah
-      }),
-    });
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: promptToSend,
+          role: "user",
+          sessionId: activeSessionId.value,
+          model: activeModel.value,
+          files: filesData, // Sertakan file yang diunggah
+        }),
+      });
 
-    const data = await res.json();
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
 
-    // Hapus bubble loading
-    const idx = messages.value.findIndex((m) => m.id === "loading");
-    if (idx !== -1) messages.value.splice(idx, 1);
+      const data = await res.json();
 
-    // Refresh messages dan sessions agar judul session update
-    await fetchMessages(activeSessionId.value);
-    await fetchSessions();
+      // Hapus bubble loading
+      const idx = messages.value.findIndex((m) => m.id === "loading");
+      if (idx !== -1) messages.value.splice(idx, 1);
 
-    // Setelah balasan Gemini diterima, baru hapus thumbnail/file
+      // Tampilkan response Gemini langsung tanpa fetch ulang
+      const assistantMsg: Message = {
+        id: "a-" + Date.now(),
+        role: "assistant",
+        content: data.response || "[No response from AI]",
+        isAIResponse: true,
+      };
+
+      messages.value.push(assistantMsg);
+
+      // Hanya fetch sessions untuk update title (tanpa fetch messages)
+      await fetchSessions(false);
+    } catch (error) {
+      console.error("Send message error:", error);
+
+      // Hapus bubble loading jika error
+      const idx = messages.value.findIndex((m) => m.id === "loading");
+      if (idx !== -1) messages.value.splice(idx, 1);
+
+      // Tampilkan pesan error
+      const errorMsg: Message = {
+        id: "error-" + Date.now(),
+        role: "assistant",
+        content: `❌ Terjadi kesalahan: ${error instanceof Error ? error.message : "Unknown error"}`,
+      };
+      messages.value.push(errorMsg);
+    }
+
+    // Setelah response ditampilkan, baru hapus thumbnail/file
     uploadedFiles.value = [];
 
     isLoading.value = false;

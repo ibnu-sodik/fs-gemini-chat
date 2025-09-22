@@ -35,7 +35,7 @@ function handleSelect(id: string) {
       <!-- Logo kiri -->
       <div class="flex items-center gap-2">
         <img src="/favicon.ico" alt="Logo" class="h-6 w-6" />
-        <span class="font-semibold text-gray-800">Gemini</span>
+        <span class="font-semibold text-gray-800">Nuxt Gemini Chatbot</span>
       </div>
       <!-- Tombol silang kanan (hanya mobile) -->
       <button
@@ -49,24 +49,6 @@ function handleSelect(id: string) {
     </div>
 
     <div class="flex-1 flex flex-col h-full max-h-24 min-h-0">
-      <!-- New Chat Button -->
-      <button
-        @click="newChat"
-        class="pl-4 px-2 py-2 rounded flex items-center justify-start gap-2 cursor-pointer hover:bg-gray-200 text-gray-700"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          height="20px"
-          viewBox="0 -960 960 960"
-          width="20px"
-          fill="#000"
-        >
-          <path
-            d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"
-          />
-        </svg>
-        <span>New Chat</span>
-      </button>
       <!-- New Chat Button -->
       <button
         @click="newChat"
