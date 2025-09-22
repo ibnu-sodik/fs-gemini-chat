@@ -29,6 +29,7 @@ model ChatSession {
   messages  Message[]
 }
 
+
 model Message {
   id          String      @id @default(cuid())
   content     String      @db.Text                  // Gunakan tipe Text untuk pesan yang panjang
@@ -41,4 +42,16 @@ model Message {
   parentMessageId String?
   parentMessage   Message?    @relation("MessageBranch", fields: [parentMessageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   children        Message[]   @relation("MessageBranch")
+
+  files        File[]    // Relasi ke file
+}
+
+model File {
+  id         String   @id @default(cuid())
+  name       String
+  type       String
+  base64     String   @db.Text
+  createdAt  DateTime @default(now())
+  messageId  String
+  message    Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
 }

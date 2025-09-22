@@ -72,14 +72,31 @@ export default defineEventHandler(async (event) => {
   }
 
   // Simpan pesan user ke database
-  if (prompt) {
-    await prisma.message.create({
+  let messageRecord = null;
+  if (prompt || (files && files.length > 0)) {
+    messageRecord = await prisma.message.create({
       data: {
-        content: prompt,
+        content: prompt || "[File only]",
         role: "user",
         sessionId,
       },
     });
+  }
+
+  // Simpan file ke tabel File dengan relasi ke pesan
+  if (messageRecord && files && files.length > 0) {
+    await Promise.all(
+      files.map((file: FileData) =>
+        prisma.file.create({
+          data: {
+            name: file.name,
+            type: file.type,
+            base64: file.base64,
+            messageId: messageRecord.id,
+          },
+        })
+      )
+    );
   }
 
   // Jika pesan pertama, update kolom title ChatSession

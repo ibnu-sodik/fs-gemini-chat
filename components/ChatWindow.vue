@@ -19,21 +19,22 @@
       >
         <!-- Pesan user: tampilkan file dan/atau text -->
         <template v-if="m.role === 'user'">
-          <!-- Cek apakah pesan ini adalah pesan terakhir user dan ada file yang dikirim -->
-          <template v-if="idx === messages.length - 2 && uploadedFiles.length">
+          <!-- Tampilkan file dari DB jika ada -->
+          <template v-if="m.files && m.files.length">
             <div class="flex flex-row gap-2 items-center flex-wrap mb-2">
-              <template v-for="(file, fidx) in uploadedFiles" :key="file.id">
-                <template v-if="file.isImage">
+              <template v-for="(file, fidx) in m.files" :key="file.id">
+                <template v-if="file.type.startsWith('image')">
                   <img
-                    :src="file.previewUrl"
+                    :src="file.base64"
                     alt="preview"
                     class="w-16 h-16 object-cover rounded border border-gray-300 cursor-pointer"
-                    @click="handlePreview(fidx)"
+                    @click="() => handleDbPreview(file)"
                   />
                 </template>
-                <template v-else-if="file.isPdf">
+                <template v-else>
                   <div
                     class="flex items-center gap-2 cursor-pointer p-2 h-16 border border-gray-300 rounded"
+                    @click="() => handleDbPreview(file)"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -45,11 +46,7 @@
                         d="M360-460h40v-80h40q17 0 28.5-11.5T480-580v-40q0-17-11.5-28.5T440-660h-80v200Zm40-120v-40h40v40h-40Zm120 120h80q17 0 28.5-11.5T640-500v-120q0-17-11.5-28.5T600-660h-80v200Zm40-40v-120h40v120h-40Zm120 40h40v-80h40v-40h-40v-40h40v-40h-80v200ZM320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-480H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Zm160-720v480-480Z"
                       />
                     </svg>
-                    <span
-                      class="text-sm font-medium"
-                      @click="handlePreview(fidx)"
-                      >{{ file.name }}</span
-                    >
+                    <span class="text-sm font-medium">{{ file.name }}</span>
                   </div>
                 </template>
               </template>
@@ -169,6 +166,7 @@
           <div class="flex justify-start mt-2">
             <div class="relative">
               <button
+                type="button"
                 @click="toggleFilesMenu"
                 :class="[
                   'flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:bg-gray-200',
@@ -194,6 +192,7 @@
                   class="absolute left-0 bottom-full mb-2 z-10 bg-white border rounded-lg shadow-lg p-2 w-60 flex flex-col gap-2"
                 >
                   <button
+                    type="button"
                     @click="addPhotosFiles"
                     class="flex flex-row w-full text-left px-3 py-2 rounded cursor-pointer hover:bg-gray-100 text-sm"
                   >
@@ -209,6 +208,7 @@
                     <span> Add photos & files </span>
                   </button>
                   <button
+                    type="button"
                     @click="createImage"
                     class="flex flex-row w-full text-left px-3 py-2 rounded cursor-pointer hover:bg-gray-100 text-sm"
                   >
@@ -343,6 +343,20 @@
 </template>
 
 <script setup lang="ts">
+// Preview file dari DB
+function handleDbPreview(file: any) {
+  if (file.type.startsWith("image")) {
+    modalImageUrl.value = file.base64;
+    showImageModal.value = true;
+  } else if (file.type === "application/pdf") {
+    modalPdfUrl.value = file.base64;
+    pdfLoadError.value = false;
+    showPdfModal.value = true;
+  } else {
+    // Untuk file selain image/pdf, bisa download
+    window.open(file.base64, "_blank");
+  }
+}
 function handleSend() {
   // Hapus thumbnail/file dari inputan sebelum loading muncul
   uploadedFiles.value = [];
