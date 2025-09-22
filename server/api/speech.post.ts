@@ -1,67 +1,43 @@
 import { defineEventHandler, readBody } from "h3";
-import axios from "axios";
+
+function decodeDataUrl(dataUrl: string) {
+  const match = dataUrl.match(/^data:(.*?);base64,(.*)$/);
+  if (!match) throw new Error("Format audio base64 tidak valid");
+  const mime = match[1];
+  const b64 = match[2];
+  const buffer = Buffer.from(b64, "base64");
+  return { mime, buffer };
+}
 
 export default defineEventHandler(async (event) => {
-  // Terima file audio base64 dari frontend
   const body = await readBody(event);
-  const { audioBase64 } = body;
+  const { audioBase64, languageCode } = body || {};
   if (!audioBase64) return { text: "" };
 
-  // Pilih provider: GOOGLE atau OPENAI
-  const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+  if (!OPENAI_API_KEY) return { text: "[OPENAI_API_KEY tidak tersedia]" };
 
-  // Jika ada GOOGLE_API_KEY, gunakan Gemini Speech-to-Text
-  if (GOOGLE_API_KEY) {
-    try {
-      // Kirim audio ke Gemini Speech-to-Text
-      // Endpoint Gemini: https://generativelanguage.googleapis.com/v1beta/models/speech-to-text:analyze
-      // Dokumentasi: https://ai.google.dev/docs/speech-to-text
-      const response = await axios.post(
-        "https://generativelanguage.googleapis.com/v1beta/models/speech-to-text:analyze?key=" +
-          GOOGLE_API_KEY,
-        {
-          config: {
-            languageCode: "id-ID", // ganti sesuai kebutuhan
-          },
-          audio: {
-            content: audioBase64.split(",")[1], // buang prefix data:audio/xxx;base64,
-          },
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      // Gemini response: { results: [{ transcript: "..." }] }
-      const transcript = response.data?.results?.[0]?.transcript || "";
-      return { text: transcript };
-    } catch (err) {
-      return { text: "[Gagal transkripsi audio Google]" };
-    }
-  }
-
-  // Jika tidak ada GOOGLE_API_KEY, fallback ke OpenAI Whisper
-  if (!OPENAI_API_KEY) return { text: "[API Key tidak tersedia]" };
   try {
-    // Kirim audio ke OpenAI Whisper
-    const response = await axios.post(
-      "https://api.openai.com/v1/audio/transcriptions",
-      {
-        file: audioBase64,
-        model: "whisper-1",
-        response_format: "text",
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return { text: response.data.text };
-  } catch (err) {
-    return { text: "[Gagal transkripsi audio OpenAI]" };
+    const { buffer, mime } = decodeDataUrl(audioBase64);
+    const formData = new FormData();
+    const fileName = "audio." + (mime.split("/")[1] || "webm");
+    formData.append("file", new Blob([buffer], { type: mime }), fileName);
+    formData.append("model", "whisper-1");
+    if (languageCode) formData.append("language", languageCode);
+    formData.append("response_format", "text");
+
+    const resp = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
+      body: formData as any,
+    });
+    if (!resp.ok) {
+      const errTxt = await resp.text();
+      return { text: `[Gagal transkripsi (${resp.status})] ${errTxt}` };
+    }
+    const text = await resp.text();
+    return { text };
+  } catch (e: any) {
+    return { text: `[Gagal transkripsi OpenAI] ${e.message || e}` };
   }
 });

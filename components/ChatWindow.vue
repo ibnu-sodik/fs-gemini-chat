@@ -256,7 +256,6 @@ function openPdfModal(url: string) {
 
 function onTranscribed(text: string) {
   input.value = text;
-  handleSend();
 }
 
 function onRecordingError(message: string) {

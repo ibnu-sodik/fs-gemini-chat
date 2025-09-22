@@ -30,9 +30,7 @@
         :style="{ height: waveHeight + 'px' }"
       ></div>
       <div v-if="!isRecording" class="text-xs text-gray-500 mt-2 text-center">
-        <span v-if="recordedAudio"
-          >Rekaman selesai, klik Done untuk transkripsi</span
-        >
+        <span v-if="recordedAudio">Mohon tunggu</span>
         <span v-else>Siap merekam</span>
       </div>
     </div>
@@ -56,18 +54,39 @@
       </button>
       <button
         type="button"
-        class="flex items-center justify-center w-7 h-7 rounded-full hover:bg-gray-200 cursor-pointer"
-        title="Done"
+        class="flex items-center justify-center w-7 h-7 rounded-full hover:bg-gray-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        :title="isRecording ? 'Stop & Transcribe' : 'Transcribe'"
         @click="onConfirm"
-        :disabled="!recordedAudio"
+        :disabled="isTranscribing"
       >
         <svg
+          v-if="!isTranscribing"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 -960 960 960"
           class="h-5 w-5"
           fill="#000"
         >
           <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z" />
+        </svg>
+        <svg
+          v-else
+          class="animate-spin h-5 w-5 text-gray-700"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+            fill="none"
+          />
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v8z"
+          />
         </svg>
       </button>
     </div>
@@ -96,6 +115,8 @@ let record: any = null;
 const isRecording = ref(false);
 const recordedAudio = ref<string>("");
 const audioBlob = ref<Blob | null>(null);
+const isTranscribing = ref(false);
+const pendingConfirm = ref(false); // user clicked confirm while recording
 let didCancelRecording = false;
 
 watch(
@@ -130,15 +151,16 @@ async function startRecording() {
     record.on("record-end", (blob: Blob) => {
       audioBlob.value = blob;
       const reader = new FileReader();
-      reader.onload = () => {
-        recordedAudio.value = reader.result as string;
-        if (!didCancelRecording) {
-          // auto transcribe
-          transcribeAudio(recordedAudio.value);
+      reader.onload = async () => {
+        recordedAudio.value = reader.result as string; // base64 retained
+        stopVisualizer();
+        if (pendingConfirm.value) {
+          pendingConfirm.value = false;
+          // langsung mulai transcribe
+          await doTranscribe();
         }
       };
       reader.readAsDataURL(blob);
-      stopVisualizer();
     });
     await record.startRecording();
     isRecording.value = true;
@@ -169,7 +191,22 @@ function onCancel() {
 }
 
 async function onConfirm() {
+  if (isTranscribing.value) return;
+  // Jika masih recording, hentikan dulu lalu proses di record-end
+  if (isRecording.value) {
+    pendingConfirm.value = true;
+    stopRecording();
+    return;
+  }
+  if (!recordedAudio.value) return; // belum ada hasil
+  await doTranscribe();
+}
+
+async function doTranscribe() {
   if (!recordedAudio.value) return;
+  isTranscribing.value = true;
+  await transcribeAudio(recordedAudio.value);
+  isTranscribing.value = false;
   emit("update:modelValue", false);
 }
 
@@ -195,6 +232,7 @@ function cleanup() {
   stopVisualizer();
   recordedAudio.value = "";
   audioBlob.value = null;
+  isTranscribing.value = false;
 }
 
 onUnmounted(() => cleanup());
