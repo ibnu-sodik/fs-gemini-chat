@@ -102,10 +102,46 @@
               </button>
               <button
                 @click="() => transcribeAudioFile(idx)"
-                class="ml-2 px-2 py-1 bg-green-100 rounded text-xs text-green-700 hover:bg-green-200"
+                :disabled="audioStates[idx]?.transcribing"
+                :class="[
+                  'mr-3',
+                  audioStates[idx]?.transcribing
+                    ? 'cursor-not-allowed opacity-50'
+                    : 'cursor-pointer',
+                ]"
                 title="Transcribe"
               >
-                Transcribe
+                <svg
+                  v-if="!audioStates[idx]?.transcribing"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 -960 960 960"
+                  class="h-5 w-5"
+                  fill="#000"
+                >
+                  <path
+                    d="M680-560q-33 0-56.5-23T600-640v-160q0-34 23.5-57t56.5-23q34 0 57 23t23 57v160q0 34-23 57t-57 23ZM200-80q-33 0-56.5-23.5T120-160v-640q0-33 23.5-56.5T200-880h320v80H200v640h440v-80h80v80q0 33-23.5 56.5T640-80H200Zm80-160v-80h280v80H280Zm0-120v-80h200v80H280Zm440 40h-80v-104q-77-14-128.5-74.5T460-640h80q0 58 41 99t99 41q59 0 99.5-41t40.5-99h80q0 81-51 141.5T720-424v104Z"
+                  />
+                </svg>
+                <svg
+                  v-else
+                  class="animate-spin h-5 w-5 text-gray-700"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                    fill="none"
+                  />
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8z"
+                  />
+                </svg>
               </button>
             </template>
             <template v-else-if="audioStates[idx]?.status === 'paused'">
@@ -143,10 +179,46 @@
               </button>
               <button
                 @click="() => transcribeAudioFile(idx)"
-                class="ml-2 px-2 py-1 bg-green-100 rounded text-xs text-green-700 hover:bg-green-200"
+                :disabled="audioStates[idx]?.transcribing"
+                :class="[
+                  'mr-3',
+                  audioStates[idx]?.transcribing
+                    ? 'cursor-not-allowed opacity-50'
+                    : 'cursor-pointer',
+                ]"
                 title="Transcribe"
               >
-                Transcribe
+                <svg
+                  v-if="!audioStates[idx]?.transcribing"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 -960 960 960"
+                  class="h-5 w-5"
+                  fill="#000"
+                >
+                  <path
+                    d="M680-560q-33 0-56.5-23T600-640v-160q0-34 23.5-57t56.5-23q34 0 57 23t23 57v160q0 34-23 57t-57 23ZM200-80q-33 0-56.5-23.5T120-160v-640q0-33 23.5-56.5T200-880h320v80H200v640h440v-80h80v80q0 33-23.5 56.5T640-80H200Zm80-160v-80h280v80H280Zm0-120v-80h200v80H280Zm440 40h-80v-104q-77-14-128.5-74.5T460-640h80q0 58 41 99t99 41q59 0 99.5-41t40.5-99h80q0 81-51 141.5T720-424v104Z"
+                  />
+                </svg>
+                <svg
+                  v-else
+                  class="animate-spin h-5 w-5 text-gray-700"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                    fill="none"
+                  />
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8z"
+                  />
+                </svg>
               </button>
             </template>
             <template v-else>
@@ -168,10 +240,46 @@
               </button>
               <button
                 @click="() => transcribeAudioFile(idx)"
-                class="ml-2 px-2 py-1 bg-green-100 rounded text-xs text-green-700 hover:bg-green-200"
+                :disabled="audioStates[idx]?.transcribing"
+                :class="[
+                  'mr-3',
+                  audioStates[idx]?.transcribing
+                    ? 'cursor-not-allowed opacity-50'
+                    : 'cursor-pointer',
+                ]"
                 title="Transcribe"
               >
-                Transcribe
+                <svg
+                  v-if="!audioStates[idx]?.transcribing"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 -960 960 960"
+                  class="h-5 w-5"
+                  fill="#000"
+                >
+                  <path
+                    d="M680-560q-33 0-56.5-23T600-640v-160q0-34 23.5-57t56.5-23q34 0 57 23t23 57v160q0 34-23 57t-57 23ZM200-80q-33 0-56.5-23.5T120-160v-640q0-33 23.5-56.5T200-880h320v80H200v640h440v-80h80v80q0 33-23.5 56.5T640-80H200Zm80-160v-80h280v80H280Zm0-120v-80h200v80H280Zm440 40h-80v-104q-77-14-128.5-74.5T460-640h80q0 58 41 99t99 41q59 0 99.5-41t40.5-99h80q0 81-51 141.5T720-424v104Z"
+                  />
+                </svg>
+                <svg
+                  v-else
+                  class="animate-spin h-5 w-5 text-gray-700"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                    fill="none"
+                  />
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8z"
+                  />
+                </svg>
               </button>
             </template>
             <button
@@ -314,26 +422,42 @@
           @click="onSend"
           :disabled="isLoading"
           :class="[
-            'flex items-center justify-center w-7 h-7 text-white rounded-full cursor-pointer shadow-md',
-            isLoading ? 'bg-gray-200/70' : 'bg-black',
+            'flex items-center justify-center w-7 h-7 hover:bg-gray-200 rounded-full cursor-pointer',
           ]"
           title="Kirim"
         >
           <svg
             v-if="isLoading"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 -960 960 960"
-            class="h-5 w-5 animate-ping"
-            fill="#000"
+            class="animate-spin h-5 w-5 text-gray-700"
+            viewBox="0 0 24 24"
           >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+              fill="none"
+            />
             <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M320-640v320-320Zm-80 400v-480h480v480H240Zm80-80h320v-320H320v320Z"
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8z"
             />
           </svg>
           <svg
+            v-else
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 -960 960 960"
+            fill="#000"
+            class="h-5 w-5 stroke-2"
+          >
+            <path
+              d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"
+            />
+          </svg>
+          <!-- <svg
             v-else
             xmlns="http://www.w3.org/2000/svg"
             class="h-5 w-5 stroke-2"
@@ -346,7 +470,7 @@
               stroke-width="2"
               d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"
             />
-          </svg>
+          </svg> -->
         </button>
       </div>
     </div>
@@ -355,6 +479,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted, onUnmounted, nextTick } from "vue";
 import { useChat } from "@/composables/useChat";
+import { toast } from "vue3-toastify";
 
 const props = defineProps<{
   modelOptions: { value: string; label: string }[];
@@ -391,6 +516,7 @@ const audioStates = reactive<{
   [idx: number]: {
     status: "idle" | "playing" | "paused";
     audio?: HTMLAudioElement;
+    transcribing?: boolean;
   };
 }>({});
 
@@ -503,20 +629,66 @@ function stopAudio(idx: number) {
 function transcribeAudioFile(idx: number) {
   const fileObj = uploadedFiles.value[idx];
   if (!fileObj || !fileObj.isAudio) return;
+
+  // Prevent multiple simultaneous transcriptions
+  if (audioStates[idx]?.transcribing) return;
+
+  // Initialize audioStates[idx] if not exists
+  if (!audioStates[idx]) {
+    audioStates[idx] = { status: "idle" };
+  }
+
+  // Set transcribing state
+  audioStates[idx].transcribing = true;
+
   const reader = new FileReader();
   reader.onload = async () => {
-    const base64 = reader.result as string;
-    const res = await fetch("/api/speech", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ audioBase64: base64 }),
-    });
-    const data = await res.json();
-    if (data.text) {
-      input.value = data.text;
-      onSend();
-    } else {
-      alert("Gagal transkripsi audio");
+    try {
+      const base64 = reader.result as string;
+      const res = await fetch("/api/speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audioBase64: base64 }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Handle API errors
+        if (data.error?.code === "insufficient_quota") {
+          toast.error("Kuota OpenAI habis. Silakan periksa billing Anda.", {
+            position: "top-right",
+            autoClose: 5000,
+          });
+        } else {
+          toast.error(data.error?.message || "Gagal transkripsi audio", {
+            position: "top-right",
+            autoClose: 5000,
+          });
+        }
+        return;
+      }
+
+      if (data.text) {
+        input.value = data.text;
+        toast.success("Audio berhasil ditranskripsi!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        onSend();
+      } else {
+        toast.warning("Tidak ada teks yang terdeteksi dari audio", {
+          position: "top-right",
+          autoClose: 4000,
+        });
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Gagal transkripsi audio", {
+        position: "top-right",
+        autoClose: 5000,
+      });
+    } finally {
+      // Reset transcribing state
+      audioStates[idx].transcribing = false;
     }
   };
   reader.readAsDataURL(fileObj.file);
