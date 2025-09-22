@@ -33,7 +33,15 @@ const {
   isUpdatingSession,
   sessions,
   fetchSessions,
+  clearState,
 } = useChat();
+
+// Clear messages and session when on /chat page (not /chat/[sessionId])
+// This ensures fresh start for new conversations
+clearState();
+displayedContent.value = {}; // Also clear local displayed content
+
+console.log("Initialized /chat page - cleared messages and session");
 
 const modelOptions = [
   { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },

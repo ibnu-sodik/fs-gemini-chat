@@ -117,6 +117,16 @@ export function useChat() {
     activeModel.value = model;
   }
 
+  function clearState() {
+    console.log("Clearing chat state for new conversation");
+    activeSessionId.value = "";
+    messages.value = [];
+    input.value = "";
+    uploadedFiles.value = [];
+    isLoading.value = false;
+    isUpdatingSession.value = false;
+  }
+
   async function newChat() {
     // Buat session baru
     const res = await fetch("/api/sessions", {
@@ -335,5 +345,6 @@ export function useChat() {
     uploadedFiles,
     isUpdatingSession,
     fetchSessions,
+    clearState,
   };
 }
