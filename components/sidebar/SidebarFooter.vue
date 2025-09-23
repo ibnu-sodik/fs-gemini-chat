@@ -26,9 +26,9 @@ const userData = computed(() => user.value as any);
 </script>
 
 <template>
-  <div class="p-3 border-t border-gray-200 mt-auto">
+  <div class="p-2 border-t border-gray-200 mt-auto">
     <!-- User Profile Section -->
-    <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+    <div class="flex items-center justify-between p-2 bg-gray-100 rounded-lg">
       <!-- User Photo -->
       <div
         v-if="userData?.picture"
@@ -42,13 +42,13 @@ const userData = computed(() => user.value as any);
       </div>
       <div
         v-else
-        class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center"
+        class="p-2 w-full h-full bg-gradient-to-bl from-gray-100 to-gray-500 rounded-full flex items-center justify-center"
       >
         <span class="text-white text-sm font-medium">{{ userInitials }}</span>
       </div>
 
       <!-- User Name -->
-      <div class="flex-1 mx-3">
+      <div class="flex-1 mx-2">
         <span class="text-sm font-medium text-gray-700 truncate">
           {{ userData?.name || "User" }}
         </span>

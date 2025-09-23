@@ -16,7 +16,7 @@ function handleClose() {
 
       <!-- Center - App Icon -->
       <div
-        class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-sm"
+        class="w-10 h-10 bg-gradient-to-bl from-gray-100 to-gray-500 rounded-lg flex items-center justify-center shadow-sm"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
