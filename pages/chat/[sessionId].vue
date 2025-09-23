@@ -5,6 +5,11 @@ import ChatSidebar from "@/components/ChatSidebar.vue";
 import ChatWindow from "@/components/ChatWindow.vue";
 import { useChat } from "@/composables/useChat";
 
+// Apply authentication middleware
+definePageMeta({
+  middleware: "auth",
+});
+
 // Get session ID from route params
 const route = useRoute();
 const router = useRouter();

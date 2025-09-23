@@ -12,6 +12,8 @@
   "dependencies": {
     "@google/genai": "^1.20.0",
     "@google/generative-ai": "^0.24.1",
+    "@logto/node": "^3.1.6",
+    "@logto/nuxt": "^1.2.6",
     "@prisma/client": "^6.16.2",
     "@tailwindcss/vite": "^4.1.13",
     "ai": "^5.0.46",

@@ -1,13 +1,19 @@
 import { PrismaClient } from "@prisma/client";
 import { defineEventHandler } from "h3";
+import { getAuthenticatedUserId } from "~/server/utils/auth";
 
 const prisma = new PrismaClient();
 
 export default defineEventHandler(async (event) => {
   try {
-    // Ambil user id dari .env
-    const userId = process.env.HC_USER_ID;
-    if (!userId) return { sessions: [] };
+    // Get authenticated user ID from session
+    const userId = await getAuthenticatedUserId(event);
+    if (!userId) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Unauthorized - Please login first",
+      });
+    }
 
     const sessions = await prisma.chatSession.findMany({
       where: { userId },
@@ -16,15 +22,16 @@ export default defineEventHandler(async (event) => {
     });
 
     return { sessions };
-  } catch (error) {
-    console.error("Database error:", error);
-    // Return mock data for testing when database is not available
-    return {
-      sessions: [
-        { id: "test-session-1", title: "Test Chat 1" },
-        { id: "test-session-2", title: "Test Chat 2" },
-        { id: "test-session-3", title: "Test Chat 3" },
-      ],
-    };
+  } catch (error: any) {
+    console.error("Get sessions error:", error);
+    if (error.statusCode === 401) {
+      throw error;
+    }
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Failed to get sessions",
+    });
+  } finally {
+    await prisma.$disconnect();
   }
 });

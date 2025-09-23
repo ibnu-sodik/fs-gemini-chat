@@ -16,7 +16,13 @@ datasource db {
 model User {
   id          String        @id @default(cuid()) // ID unik dari CUID
   email       String        @unique             // Email pengguna, digunakan untuk login
+  name        String?                           // Nama pengguna (bisa null saat pertama kali)
+  avatar      String?                           // URL foto profil pengguna
   logtoId     String        @unique             // ID dari Logto untuk sinkronisasi
+  isActive    Boolean       @default(true)      // Status aktif pengguna
+  lastLoginAt DateTime?                         // Timestamp login terakhir
+  createdAt   DateTime      @default(now())     // Timestamp pembuatan akun
+  updatedAt   DateTime      @updatedAt @default(now()) // Timestamp update terakhir
   sessions    ChatSession[]                     // Relasi ke semua sesi chat milik pengguna
 }
 

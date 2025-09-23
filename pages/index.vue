@@ -8,27 +8,6 @@ const appName = $config.public.appName;
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center">
-            <h1 class="text-2xl font-bold text-gray-900">
-              {{ appName }}
-            </h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <NuxtLink
-              to="/chat"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Start Chatting
-            </NuxtLink>
-          </div>
-        </div>
-      </div>
-    </nav>
-
     <!-- Hero Section -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
       <div class="text-center">

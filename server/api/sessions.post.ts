@@ -1,21 +1,39 @@
 import { PrismaClient } from "@prisma/client";
 import { defineEventHandler, readBody } from "h3";
+import { getAuthenticatedUserId } from "~/server/utils/auth";
 
 const prisma = new PrismaClient();
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
-  const userId = process.env.HC_USER_ID;
-  if (!userId) return { error: true, message: "User ID not found" };
+  try {
+    const body = await readBody(event);
 
-  // Buat session baru
-  const session = await prisma.chatSession.create({
-    data: {
-      userId,
-      title: body.title || "New Chat",
-    },
-    select: { id: true, title: true },
-  });
+    // Get authenticated user ID from session
+    const userId = await getAuthenticatedUserId(event);
+    if (!userId) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Unauthorized - Please login first",
+      });
+    }
 
-  return { session };
+    // Buat session baru
+    const session = await prisma.chatSession.create({
+      data: {
+        userId,
+        title: body.title || "New Chat",
+      },
+      select: { id: true, title: true },
+    });
+
+    return { session };
+  } catch (error) {
+    console.error("Create session error:", error);
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Failed to create session",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
 });
