@@ -2,6 +2,10 @@
   "name": "nuxt-app",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
@@ -25,7 +29,7 @@
     "tailwindcss": "^4.1.13",
     "vue": "^3.5.21",
     "vue-router": "^4.5.1",
-    "vue3-toastify": "^0.2.8",
+    "vue3-toastify": "^0.1.14",
     "wavesurfer.js": "^7.10.1"
   },
   "devDependencies": {
