@@ -3,7 +3,7 @@
     <!-- Chat Messages -->
     <div
       ref="chatListRef"
-      class="flex-1 overflow-y-auto p-6 space-y-4"
+      class="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:px-24 xl:px-36 2xl:px-48 space-y-4"
       style="min-height: 0"
       @scroll="handleScroll"
     >
@@ -11,10 +11,10 @@
         v-for="(m, idx) in messages"
         :key="m.id"
         :class="[
-          'px-4 py-2 w-fit ',
+          'px-4 py-2 break-words',
           m.role === 'user'
-            ? 'max-w-[80vw] md:max-w-xl rounded-lg shadow ml-auto bg-gray-200 text-gray-900'
-            : 'mr-auto',
+            ? 'max-w-[85%] sm:max-w-[80%] md:max-w-xl rounded-lg shadow ml-auto bg-gray-200 text-gray-900 w-fit'
+            : 'w-full',
         ]"
       >
         <!-- Pesan user: tampilkan file dan/atau text -->
@@ -61,7 +61,7 @@
         <!-- Pesan loading -->
         <span v-else-if="m.id === 'loading'">
           <span class="flex items-center gap-2">
-            <svg class="animate-spin h-4 w-4 text-blue-500" viewBox="0 0 24 24">
+            <svg class="animate-spin h-4 w-4 text-gray-500" viewBox="0 0 24 24">
               <circle
                 class="opacity-25"
                 cx="12"
@@ -81,10 +81,11 @@
           </span>
         </span>
         <!-- Pesan Gemini -->
-        <span
+        <div
           v-else-if="m.role === 'assistant'"
+          class="prose max-w-none overflow-hidden"
           v-html="formatAI(displayedContent[m.id] || '')"
-        ></span>
+        ></div>
       </div>
     </div>
 
@@ -121,7 +122,7 @@
       </button>
     </transition>
 
-    <div class="px-4 pb-4 pt-1 shadow-xl">
+    <div class="px-2 sm:px-4 lg:px-24 xl:px-36 2xl:px-48 pb-4 pt-1 shadow-xl">
       <RecordingPanel
         v-model="showRecording"
         :wave-height="10"
@@ -192,6 +193,68 @@
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Custom responsive styles for Gemini messages */
+.prose {
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Responsive tables */
+.prose :deep(table) {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+@media (max-width: 640px) {
+  .prose :deep(table) {
+    font-size: 0.875rem;
+  }
+
+  .prose :deep(th),
+  .prose :deep(td) {
+    padding: 0.5rem 0.25rem;
+    min-width: 80px;
+  }
+}
+
+/* Responsive code blocks */
+.prose :deep(pre) {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.prose :deep(code) {
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+/* Responsive images */
+.prose :deep(img) {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Long URLs and links */
+.prose :deep(a) {
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+/* Lists responsive spacing */
+@media (max-width: 640px) {
+  .prose :deep(ul),
+  .prose :deep(ol) {
+    padding-left: 1.25rem;
+  }
+}
+</style>
 
 <script setup lang="ts">
 import RecordingPanel from "./RecordingPanel.vue";
