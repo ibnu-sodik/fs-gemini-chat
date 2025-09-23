@@ -25,6 +25,10 @@ const sessionToDelete = ref<{ id: string; title: string } | null>(null);
 const sidebarRef = ref<HTMLElement | null>(null);
 const chatSessionsRef = ref<HTMLElement | null>(null);
 const isScrolled = ref(false);
+const isCreatingNewChat = ref(false);
+const isDeletingSession = ref(false);
+let debounceTimeout: NodeJS.Timeout | null = null;
+let deleteDebounceTimeout: NodeJS.Timeout | null = null;
 
 function handleSelect(id: string) {
   // Navigate to specific chat session
@@ -32,7 +36,39 @@ function handleSelect(id: string) {
   emit("close"); // auto close sidebar di mobile
 }
 
-async function handleNewChat() {
+async function createNewChatWithLoading() {
+  if (isCreatingNewChat.value) return; // Prevent if already creating
+
+  isCreatingNewChat.value = true;
+
+  try {
+    const sessionId = await newChat();
+    if (sessionId) {
+      navigateTo(`/chat/${sessionId}`);
+      emit("close");
+    }
+  } catch (error) {
+    console.error("Failed to create new chat:", error);
+    // Optional: Show error toast
+    // toast.error("Failed to create new chat");
+  } finally {
+    isCreatingNewChat.value = false;
+  }
+}
+
+function handleNewChat() {
+  // Clear previous debounce timeout
+  if (debounceTimeout) {
+    clearTimeout(debounceTimeout);
+  }
+
+  // Set new debounce timeout
+  debounceTimeout = setTimeout(() => {
+    createNewChatWithLoading();
+  }, 300); // 300ms debounce delay
+}
+
+async function handleNewChatOld() {
   const sessionId = await newChat();
   if (sessionId) {
     navigateTo(`/chat/${sessionId}`);
@@ -88,7 +124,52 @@ async function handleDelete(sessionId: string) {
   }
 }
 
-async function confirmDelete() {
+async function deleteSessionWithLoading() {
+  if (!sessionToDelete.value || isDeletingSession.value) return; // Prevent if already deleting
+
+  isDeletingSession.value = true;
+
+  try {
+    const isActiveSession = sessionToDelete.value.id === activeSessionId.value;
+
+    await deleteSession(sessionToDelete.value.id);
+
+    // Reset modal state first
+    showDeleteModal.value = false;
+    sessionToDelete.value = null;
+
+    // Jika session yang dihapus adalah session aktif, redirect ke home
+    if (isActiveSession) {
+      // Add small delay to ensure state is cleared
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await navigateTo("/chat");
+    }
+  } catch (error) {
+    console.error("Error deleting session:", error);
+    // Optional: Show error toast
+    // toast.error("Failed to delete chat session");
+
+    // Reset modal state even on error
+    showDeleteModal.value = false;
+    sessionToDelete.value = null;
+  } finally {
+    isDeletingSession.value = false;
+  }
+}
+
+function confirmDelete() {
+  // Clear previous debounce timeout
+  if (deleteDebounceTimeout) {
+    clearTimeout(deleteDebounceTimeout);
+  }
+
+  // Set new debounce timeout
+  deleteDebounceTimeout = setTimeout(() => {
+    deleteSessionWithLoading();
+  }, 300); // 300ms debounce delay
+}
+
+async function confirmDeleteOld() {
   if (sessionToDelete.value) {
     const isActiveSession = sessionToDelete.value.id === activeSessionId.value;
 
@@ -115,8 +196,14 @@ async function confirmDelete() {
 }
 
 function cancelDelete() {
+  // Clear delete debounce timeout when canceling
+  if (deleteDebounceTimeout) {
+    clearTimeout(deleteDebounceTimeout);
+  }
+
   showDeleteModal.value = false;
   sessionToDelete.value = null;
+  isDeletingSession.value = false; // Reset loading state
 }
 
 function handleLogout() {
@@ -169,6 +256,11 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener("click", handleGlobalClick);
+
+  // Cleanup debounce timeout
+  if (debounceTimeout) {
+    clearTimeout(debounceTimeout);
+  }
 });
 </script>
 
@@ -220,9 +312,39 @@ onUnmounted(() => {
         <!-- New Chat Button -->
         <button
           @click="handleNewChat"
-          class="w-full pl-3 pr-2 py-1.5 rounded flex items-center justify-start gap-2 cursor-pointer hover:bg-gray-200 text-gray-700 text-sm transition-colors"
+          :disabled="isCreatingNewChat"
+          :class="[
+            'w-full pl-3 pr-2 py-1.5 rounded flex items-center justify-start gap-2 text-sm transition-colors',
+            isCreatingNewChat
+              ? 'opacity-50 cursor-not-allowed text-gray-500'
+              : 'cursor-pointer hover:bg-gray-200 text-gray-700',
+          ]"
         >
+          <!-- Loading Spinner -->
           <svg
+            v-if="isCreatingNewChat"
+            class="animate-spin h-4 w-4"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+              fill="none"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8z"
+            />
+          </svg>
+
+          <!-- Normal Icon -->
+          <svg
+            v-else
             xmlns="http://www.w3.org/2000/svg"
             height="16px"
             viewBox="0 -960 960 960"
@@ -233,7 +355,10 @@ onUnmounted(() => {
               d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"
             />
           </svg>
-          <span class="text-sm font-medium">New Chat</span>
+
+          <span class="text-sm font-medium">
+            {{ isCreatingNewChat ? "Creating..." : "New Chat" }}
+          </span>
         </button>
 
         <!-- Search Chats Button -->
@@ -344,7 +469,7 @@ onUnmounted(() => {
             >
               <button
                 @click="startRename(s)"
-                class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2"
+                class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center gap-2 cursor-pointer"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -361,7 +486,7 @@ onUnmounted(() => {
               </button>
               <button
                 @click="handleDelete(s.id)"
-                class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 text-red-600 flex items-center gap-2"
+                class="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 text-red-600 flex items-center gap-2 cursor-pointer"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -427,7 +552,7 @@ onUnmounted(() => {
     <div
       v-if="showDeleteModal"
       class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      @click="cancelDelete"
+      @click="!isDeletingSession && cancelDelete()"
     >
       <div
         class="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
@@ -445,15 +570,38 @@ onUnmounted(() => {
         <div class="flex gap-3 justify-end">
           <button
             @click="cancelDelete"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 cursor-pointer hover:bg-gray-200 rounded-md transition-colors"
+            :disabled="isDeletingSession"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 cursor-pointer hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             @click="confirmDelete"
-            class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 cursor-pointer rounded-md transition-colors"
+            :disabled="isDeletingSession"
+            class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 cursor-pointer rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Delete
+            <svg
+              v-if="isDeletingSession"
+              class="animate-spin h-4 w-4"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            {{ isDeletingSession ? "Deleting..." : "Delete" }}
           </button>
         </div>
       </div>
