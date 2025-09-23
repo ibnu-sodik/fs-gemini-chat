@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
       expiresAt: Date.now() + tokenResponse.expires_in * 1000,
     };
 
-    // Encrypt session data (simple base64 for now, use proper encryption in production) t
+    // Encrypt session data (simple base64 for now, use proper encryption in production)
     const sessionToken = Buffer.from(JSON.stringify(sessionData)).toString(
       "base64"
     );
