@@ -23,6 +23,8 @@ const editingTitle = ref("");
 const showDeleteModal = ref(false);
 const sessionToDelete = ref<{ id: string; title: string } | null>(null);
 const sidebarRef = ref<HTMLElement | null>(null);
+const chatSessionsRef = ref<HTMLElement | null>(null);
+const isScrolled = ref(false);
 
 function handleSelect(id: string) {
   // Navigate to specific chat session
@@ -127,6 +129,13 @@ function handleSearchChats() {
   console.log("Search chats clicked");
 }
 
+function handleChatSessionsScroll() {
+  if (chatSessionsRef.value) {
+    const scrollTop = chatSessionsRef.value.scrollTop;
+    isScrolled.value = scrollTop > 10; // Show shadow when scrolled more than 10px
+  }
+}
+
 // Close options when clicking outside
 function closeOptions() {
   showOptionsId.value = null;
@@ -199,7 +208,15 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="px-2 py-2">
+      <div
+        id="fix-menu"
+        :class="[
+          'px-2 py-2 transition-all duration-200',
+          isScrolled
+            ? 'border-gray-200 shadow-sm bg-gray-50/95 backdrop-blur-sm'
+            : '',
+        ]"
+      >
         <!-- New Chat Button -->
         <button
           @click="handleNewChat"
@@ -240,7 +257,11 @@ onUnmounted(() => {
       </div>
 
       <!-- Chat Sessions -->
-      <div class="flex-1 overflow-y-auto space-y-0.5">
+      <div
+        ref="chatSessionsRef"
+        class="flex-1 overflow-y-auto space-y-0.5"
+        @scroll="handleChatSessionsScroll"
+      >
         <span class="pl-4 py-1 text-xs text-gray-500 block">Chats</span>
         <div
           v-for="s in sessions"
