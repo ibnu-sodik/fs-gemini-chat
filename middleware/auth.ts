@@ -1,6 +1,6 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  // Skip middleware pada halaman auth
-  if (to.path.startsWith("/auth/")) {
+  // Skip middleware pada halaman auth tertentu (bukan sign-out)
+  if (to.path.startsWith("/auth/") && to.path !== "/auth/sign-out") {
     return;
   }
 

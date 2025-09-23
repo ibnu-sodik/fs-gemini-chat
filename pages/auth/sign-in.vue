@@ -24,18 +24,14 @@
 </template>
 
 <script setup lang="ts">
-const { signIn, isAuthenticated } = useAuth();
+// Apply guest middleware to prevent access when already logged in
+definePageMeta({
+  middleware: "guest",
+});
 
-// Redirect ke halaman home jika sudah login
-if (isAuthenticated.value) {
-  await navigateTo("/");
-}
+const { signIn, isAuthenticated } = useAuth();
 
 const handleSignIn = async () => {
   await signIn();
-  // Setelah berhasil login, redirect ke home
-  if (isAuthenticated.value) {
-    await navigateTo("/");
-  }
 };
 </script>

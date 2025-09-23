@@ -1,24 +1,60 @@
 <script setup lang="ts">
-function handleLogout() {
-  // TODO: Implement logout functionality
-  console.log("Logout clicked");
+const { user, signOut } = useAuth();
+
+async function handleLogout() {
+  try {
+    await signOut();
+  } catch (error) {
+    console.error("Logout error:", error);
+  }
 }
+
+// Get user initials for avatar
+const userInitials = computed(() => {
+  const userData = user.value as any;
+  if (!userData?.name) return "U";
+  return userData.name
+    .split(" ")
+    .map((name: string) => name[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+});
+
+// Get user data safely
+const userData = computed(() => user.value as any);
 </script>
 
 <template>
   <div class="p-3 border-t border-gray-200 mt-auto">
     <!-- User Profile Section -->
     <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-      <!-- User Photo (placeholder) -->
+      <!-- User Photo -->
       <div
+        v-if="userData?.picture"
+        class="w-8 h-8 rounded-full overflow-hidden"
+      >
+        <img
+          :src="userData.picture"
+          :alt="userData.name || 'User'"
+          class="w-full h-full object-cover"
+        />
+      </div>
+      <div
+        v-else
         class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center"
       >
-        <span class="text-white text-sm font-medium">U</span>
+        <span class="text-white text-sm font-medium">{{ userInitials }}</span>
       </div>
 
       <!-- User Name -->
       <div class="flex-1 mx-3">
-        <span class="text-sm font-medium text-gray-700">User Name</span>
+        <span class="text-sm font-medium text-gray-700 truncate">
+          {{ userData?.name || "User" }}
+        </span>
+        <div v-if="userData?.email" class="text-xs text-gray-500 truncate">
+          {{ userData.email }}
+        </div>
       </div>
 
       <!-- Logout Button -->

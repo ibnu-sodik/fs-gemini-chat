@@ -21,5 +21,10 @@
 </template>
 
 <script setup lang="ts">
+// Apply auth middleware to ensure user is logged in before accessing sign-out
+definePageMeta({
+  middleware: "auth",
+});
+
 // Halaman ini akan dihandle otomatis oleh Logto untuk sign out
 </script>
