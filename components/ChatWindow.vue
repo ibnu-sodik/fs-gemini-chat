@@ -1,10 +1,11 @@
 <template>
-  <div class="h-full bg-white flex flex-col">
+  <div class="h-full bg-white flex flex-col relative">
     <!-- Chat Messages -->
     <div
       ref="chatListRef"
       class="flex-1 overflow-y-auto p-6 space-y-4"
       style="min-height: 0"
+      @scroll="handleScroll"
     >
       <div
         v-for="(m, idx) in messages"
@@ -86,6 +87,39 @@
         ></span>
       </div>
     </div>
+
+    <!-- Scroll to bottom button with fade animation -->
+    <transition
+      enter-active-class="transition-all duration-300 ease-out"
+      enter-from-class="opacity-0 transform translate-y-4 scale-95"
+      enter-to-class="opacity-100 transform translate-y-0 scale-100"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="opacity-100 transform translate-y-0 scale-100"
+      leave-to-class="opacity-0 transform translate-y-4 scale-95"
+    >
+      <button
+        v-if="showScrollToBottomButton"
+        @click="resumeAutoScroll"
+        class="absolute cursor-pointer bottom-32 left-1/2 transform -translate-x-1/2 bg-gray-400 hover:bg-gray-500 text-white p-2 rounded-full shadow-lg z-10 flex items-center gap-2"
+        :class="{ 'animate-pulse': isTyping }"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 14l-7 7m0 0l-7-7m7 7V3"
+          />
+        </svg>
+        <!-- <span v-if="isTyping" class="text-sm"></span> -->
+      </button>
+    </transition>
 
     <div class="px-4 pb-4 pt-1 shadow-xl">
       <RecordingPanel
@@ -170,12 +204,20 @@ const showRecording = vueRef(false);
 const showThumbnails = ref(false);
 import { marked } from "marked";
 import { useChat } from "@/composables/useChat";
-import { nextTick, ref, watch, onMounted } from "vue";
+import { nextTick, ref, watch, onMounted, onUnmounted } from "vue";
 const { messages, input, send, isLoading, setModel, uploadedFiles } = useChat();
 
 const chatListRef = ref<HTMLElement | null>(null);
 const displayedContent = ref<{ [id: string]: string }>({});
 const inputRef = ref<HTMLTextAreaElement | null>(null);
+
+// Smart auto-scroll state management
+const isUserManuallyScrolling = ref(false);
+const isTyping = ref(false);
+const showScrollToBottomButton = ref(false);
+const shouldAutoScroll = ref(true);
+const scrollTimeout = ref<NodeJS.Timeout | null>(null);
+const isProgrammaticScroll = ref(false); // Flag to prevent race condition
 
 const modelOptions = [
   { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
@@ -226,6 +268,13 @@ onMounted(() => {
   setModel(selectedModel.value);
 });
 
+onUnmounted(() => {
+  // Cleanup timeout on component unmount
+  if (scrollTimeout.value) {
+    clearTimeout(scrollTimeout.value);
+  }
+});
+
 // cleanup not required for removed listeners
 
 function handleDbPreview(file: any) {
@@ -244,10 +293,19 @@ function handleDbPreview(file: any) {
 function handleSend() {
   if (!showRecording.value) {
     showThumbnails.value = false;
+
+    // Reset auto-scroll state when user sends a message
+    // User wants to see their own message and continue conversation
+    shouldAutoScroll.value = true;
+    showScrollToBottomButton.value = false;
+    isUserManuallyScrolling.value = false;
+    isProgrammaticScroll.value = false;
+
     // Trigger send (user message will be appended by composable)
     send();
-    // Scroll immediately so user sees their message without waiting AI reply
-    nextTick(() => scrollToBottom());
+
+    // Force scroll to show user's message immediately
+    nextTick(() => scrollToBottom({ instant: false }));
   }
 }
 
@@ -273,6 +331,11 @@ function onRecordingError(message: string) {
 }
 
 function scrollToBottom(opts: { instant?: boolean } = {}) {
+  // Only auto-scroll if user hasn't manually scrolled up or explicitly allowed
+  if (!shouldAutoScroll.value && !opts.instant) {
+    return;
+  }
+
   nextTick(() => {
     requestAnimationFrame(() => {
       const el = chatListRef.value;
@@ -289,6 +352,53 @@ function scrollToBottom(opts: { instant?: boolean } = {}) {
   });
 }
 
+// Handle user scroll behavior
+function handleScroll() {
+  if (!chatListRef.value || isProgrammaticScroll.value) return;
+
+  const el = chatListRef.value;
+  const isAtBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 50; // 50px tolerance
+
+  // Clear any existing timeout
+  if (scrollTimeout.value) {
+    clearTimeout(scrollTimeout.value);
+  }
+
+  // If user scrolled up, pause auto-scroll and show button
+  if (!isAtBottom) {
+    shouldAutoScroll.value = false;
+    showScrollToBottomButton.value = true;
+    isUserManuallyScrolling.value = true;
+  } else {
+    // User is at bottom, enable auto-scroll again
+    shouldAutoScroll.value = true;
+    showScrollToBottomButton.value = false;
+    isUserManuallyScrolling.value = false;
+  }
+
+  // Set timeout to hide button if user stays at bottom
+  scrollTimeout.value = setTimeout(() => {
+    if (isAtBottom) {
+      showScrollToBottomButton.value = false;
+    }
+  }, 1000);
+}
+
+// Resume auto-scroll when user clicks the button
+function resumeAutoScroll() {
+  isProgrammaticScroll.value = true; // Prevent handleScroll from interfering
+  shouldAutoScroll.value = true;
+  showScrollToBottomButton.value = false;
+  isUserManuallyScrolling.value = false;
+
+  scrollToBottom({ instant: false });
+
+  // Reset flag after scroll animation completes
+  setTimeout(() => {
+    isProgrammaticScroll.value = false;
+  }, 500); // Wait for smooth scroll to complete
+}
+
 // handleEnter now handled inside ChatInputPanel.
 
 function formatAI(text: string) {
@@ -298,13 +408,30 @@ function formatAI(text: string) {
 // Animasi typing untuk pesan Gemini
 function animateMessage(id: string, content: string) {
   displayedContent.value[id] = "";
+  isTyping.value = true; // Set typing state
+
   let i = 0;
   const interval = setInterval(() => {
     displayedContent.value[id] += content[i];
     i++;
-    scrollToBottom({ instant: false });
-    if (i >= content.length) clearInterval(interval);
-  }, 30); // 20ms per huruf, bisa diubah
+
+    // Only auto-scroll if user hasn't scrolled up manually
+    if (shouldAutoScroll.value) {
+      scrollToBottom({ instant: false });
+    }
+
+    if (i >= content.length) {
+      clearInterval(interval);
+      isTyping.value = false; // Clear typing state when done
+
+      // If user was waiting at top, auto-hide the button after typing is done
+      if (showScrollToBottomButton.value && !isUserManuallyScrolling.value) {
+        setTimeout(() => {
+          showScrollToBottomButton.value = false;
+        }, 2000);
+      }
+    }
+  }, 30); // 30ms per huruf
 }
 
 // Animasi per kata:
