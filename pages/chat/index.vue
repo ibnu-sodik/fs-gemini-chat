@@ -34,6 +34,8 @@ const {
   sessions,
   fetchSessions,
   clearState,
+  updateSessionTitle: updateSessionTitleComposable,
+  autoRenameSession,
 } = useChat();
 
 // Clear messages and session when on /chat page (not /chat/[sessionId])
@@ -118,9 +120,9 @@ async function createNewSession() {
 
   const data = await res.json();
 
-  // Add session to local sessions array immediately
+  // Add session to local sessions array immediately at the top
   const { sessions } = useChat();
-  sessions.value.push({
+  sessions.value.unshift({
     id: data.session.id,
     title: "New Chat",
   });
@@ -187,7 +189,9 @@ async function sendMessageToBackend(messageContent: string, userMessage: any) {
     // Step 5: Update session title (hanya untuk pesan pertama)
     const messageCount = messages.value.filter((m) => m.role === "user").length;
     if (messageCount === 1) {
-      await updateSessionTitle(messageContent);
+      console.log("Step 5: Updating session title in sidebar");
+      // Use autoRenameSession for consistency
+      await autoRenameSession(activeSessionId.value, messageContent);
     }
 
     // Start animation
@@ -200,47 +204,6 @@ async function sendMessageToBackend(messageContent: string, userMessage: any) {
       delete displayedContent.value["loading"];
     }
     throw error;
-  }
-}
-
-// Helper function to update session title
-async function updateSessionTitle(messageContent: string) {
-  if (!activeSessionId.value) return;
-
-  const newTitle = messageContent.trim().slice(0, 30);
-  const title =
-    newTitle.length < messageContent.trim().length
-      ? newTitle + "..."
-      : newTitle;
-
-  try {
-    const res = await fetch(`/api/sessions/${activeSessionId.value}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    });
-
-    if (res.ok) {
-      // Update local sessions for sidebar
-
-      // Fetch sessions to ensure we have the latest data
-      await fetchSessions(false);
-
-      const sessionIndex = sessions.value.findIndex(
-        (s) => s.id === activeSessionId.value
-      );
-
-      if (sessionIndex !== -1) {
-        sessions.value[sessionIndex].title = title;
-      } else {
-        console.log(
-          "Session not found in sessions array, activeSessionId:",
-          activeSessionId.value
-        );
-      }
-    }
-  } catch (error) {
-    console.error("Failed to update session title:", error);
   }
 }
 
@@ -276,7 +239,7 @@ function animateMessage(id: string, content: string) {
 
       isAnimating.value = false;
     }
-  }, 30); // 30ms per huruf
+  }, 15); // 15ms per huruf
 }
 
 function onTranscribed(text: string) {
@@ -434,7 +397,7 @@ setModel(selectedModel.value);
             <span v-else-if="m.id === 'loading'">
               <span class="flex items-center gap-2">
                 <svg
-                  class="animate-spin h-4 w-4 text-blue-500"
+                  class="animate-spin h-4 w-4 text-gray-500"
                   viewBox="0 0 24 24"
                 >
                   <circle

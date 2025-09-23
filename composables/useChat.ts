@@ -24,6 +24,7 @@ const globalState = {
   isLoading: ref(false),
   uploadedFiles: ref<any[]>([]),
   isUpdatingSession: ref(false), // Flag to prevent reactivity conflicts
+  isTypingTitle: ref<string | null>(null), // Track which session is being auto-renamed
   initialized: false,
 };
 
@@ -37,6 +38,7 @@ export function useChat() {
   const isLoading = globalState.isLoading;
   const uploadedFiles = globalState.uploadedFiles;
   const isUpdatingSession = globalState.isUpdatingSession;
+  const isTypingTitle = globalState.isTypingTitle;
 
   async function fetchSessions(shouldFetchMessages: boolean = true) {
     const res = await fetch("/api/sessions");
@@ -70,16 +72,16 @@ export function useChat() {
       }
 
       const encodedSessionId = encodeURIComponent(sessionId.trim());
-      const url = `/api/messages?sessionId=${encodedSessionId}`;
 
-      const res = await fetch(url);
+      // Use $fetch for proper Nuxt API calls
+      const response = await $fetch("/api/messages", {
+        query: {
+          sessionId: encodedSessionId,
+        },
+      });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      }
-
-      const data = await res.json();
-      messages.value = data.messages || [];
+      // $fetch automatically handles JSON parsing and throws on HTTP errors
+      messages.value = (response.messages || []) as Message[];
     } catch (error) {
       console.error("Error fetching messages:", error);
       // Set empty messages on error
@@ -138,12 +140,18 @@ export function useChat() {
     if (data.session && data.session.id) {
       activeSessionId.value = data.session.id;
       messages.value = [];
-      await fetchSessions();
+
+      // Add new session to the top of the sessions list immediately
+      sessions.value.unshift({
+        id: data.session.id,
+        title: "New Chat",
+      });
+
       return data.session.id; // Return session ID for navigation
     } else {
       await fetchSessions();
       if (sessions.value.length > 0) {
-        activeSessionId.value = sessions.value[sessions.value.length - 1].id;
+        activeSessionId.value = sessions.value[0].id; // Use first (newest) session
         messages.value = [];
         return activeSessionId.value; // Return session ID for navigation
       }
@@ -202,6 +210,14 @@ export function useChat() {
       } catch (error) {
         console.error("Error creating new session:", error);
         return;
+      }
+    } else {
+      // Check if this is the first user message in existing session
+      const userMessageCount = messages.value.filter(
+        (m) => m.role === "user"
+      ).length;
+      if (userMessageCount === 0) {
+        shouldUpdateTitle = true; // First message in existing session
       }
     }
 
@@ -290,15 +306,8 @@ export function useChat() {
 
       // Update session title if this was the first message
       if (shouldUpdateTitle && messageContent) {
-        const newTitle = generateTitleFromMessage(messageContent);
-        // Calculate delay based on message length with buffer
-        const messageLength = data.response?.length || 1000;
-        const estimatedAnimationTime = messageLength * 30; // 30ms per character
-        const safeDelay = Math.max(estimatedAnimationTime + 2000, 5000); // At least 5 seconds
-
-        setTimeout(async () => {
-          await updateSessionTitle(currentSessionId, newTitle);
-        }, safeDelay);
+        // Use autoRenameSession for consistency
+        await autoRenameSession(currentSessionId, messageContent);
       }
     } catch (error) {
       console.error("Send message error:", error);
@@ -367,7 +376,57 @@ export function useChat() {
       console.error("Error deleting session:", error);
       throw error;
     }
-  } // Initialize only once
+  }
+
+  // Helper function for auto-renaming new chats with typing animation
+  async function autoRenameSession(sessionId: string, firstMessage: string) {
+    if (!sessionId || !firstMessage.trim()) return;
+
+    const newTitle = generateTitleFromMessage(firstMessage);
+
+    // Add delay to ensure AI response animation is complete
+    setTimeout(async () => {
+      // Start typing animation
+      isTypingTitle.value = sessionId;
+
+      // Find session and set temporary typing state
+      const sessionIndex = sessions.value.findIndex((s) => s.id === sessionId);
+      const originalTitle =
+        sessionIndex !== -1 ? sessions.value[sessionIndex].title : "New Chat";
+
+      if (sessionIndex !== -1) {
+        // Animate typing effect
+        await animateTypingTitle(sessionIndex, newTitle);
+      }
+
+      // Update title in database
+      await updateSessionTitle(sessionId, newTitle);
+
+      // Stop typing animation
+      isTypingTitle.value = null;
+    }, 3000); // 3 second delay
+  }
+
+  // Animate typing effect for title
+  async function animateTypingTitle(sessionIndex: number, newTitle: string) {
+    return new Promise<void>((resolve) => {
+      // Clear current title and start typing
+      sessions.value[sessionIndex].title = "";
+
+      let i = 0;
+      const typingInterval = setInterval(() => {
+        if (i < newTitle.length) {
+          sessions.value[sessionIndex].title += newTitle[i];
+          i++;
+        } else {
+          clearInterval(typingInterval);
+          resolve();
+        }
+      }, 50); // 50ms per character
+    });
+  }
+
+  // Initialize only once
   if (!globalState.initialized) {
     // Don't auto-fetch messages on initialization, let route handle it
     onMounted(() => {
@@ -387,12 +446,14 @@ export function useChat() {
     updateSession,
     deleteSession,
     generateTitleFromMessage,
+    autoRenameSession,
     messages,
     input,
     send,
     isLoading,
     uploadedFiles,
     isUpdatingSession,
+    isTypingTitle,
     fetchSessions,
     clearState,
   };

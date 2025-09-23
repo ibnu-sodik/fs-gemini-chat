@@ -7,8 +7,14 @@ defineProps<{
 }>();
 
 const emit = defineEmits(["close"]);
-const { sessions, activeSessionId, newChat, updateSession, deleteSession } =
-  useChat();
+const {
+  sessions,
+  activeSessionId,
+  newChat,
+  updateSession,
+  deleteSession,
+  isTypingTitle,
+} = useChat();
 
 // State untuk mengontrol dropdown options
 const showOptionsId = ref<string | null>(null);
@@ -223,9 +229,26 @@ onUnmounted(() => {
           <div
             v-if="editingSessionId !== s.id"
             @click="handleSelect(s.id)"
-            class="flex-1 truncate"
+            class="flex-1 truncate flex items-center gap-2"
           >
-            {{ s.title }}
+            <span>{{ s.title }}</span>
+            <!-- Typing Indicator untuk Auto-Rename -->
+            <div v-if="isTypingTitle === s.id" class="flex items-center gap-1">
+              <div class="flex space-x-1">
+                <div
+                  class="w-1 h-1 bg-gray-500 rounded-full animate-bounce"
+                  style="animation-delay: 0ms"
+                ></div>
+                <div
+                  class="w-1 h-1 bg-gray-500 rounded-full animate-bounce"
+                  style="animation-delay: 150ms"
+                ></div>
+                <div
+                  class="w-1 h-1 bg-gray-500 rounded-full animate-bounce"
+                  style="animation-delay: 300ms"
+                ></div>
+              </div>
+            </div>
           </div>
 
           <!-- Edit Input -->
