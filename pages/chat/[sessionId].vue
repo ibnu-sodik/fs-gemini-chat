@@ -90,7 +90,7 @@ function toggleSidebar() {
         <div class="hidden md:flex items-center gap-4">
           <NuxtLink
             to="/"
-            class="text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md transition-colors"
+            class="text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md transition-colors"
           >
             ← Back to Home
           </NuxtLink>

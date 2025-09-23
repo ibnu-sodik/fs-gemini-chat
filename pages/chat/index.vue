@@ -300,13 +300,13 @@ setModel(selectedModel.value);
           >
             ☰
           </button>
-          <span class="font-semibold text-gray-900">Gemini Chat</span>
+          <span class="font-semibold text-gray-900">Nuxt Gemini Chatbot</span>
         </div>
         <!-- Desktop navigation -->
         <div class="hidden md:flex items-center gap-4">
           <NuxtLink
             to="/"
-            class="text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md transition-colors"
+            class="text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md transition-colors"
           >
             ← Back to Home
           </NuxtLink>

@@ -117,6 +117,11 @@ function cancelDelete() {
   sessionToDelete.value = null;
 }
 
+function handleLogout() {
+  // TODO: Implement logout functionality
+  console.log("Logout clicked");
+}
+
 // Close options when clicking outside
 function closeOptions() {
   showOptionsId.value = null;
@@ -165,18 +170,18 @@ onUnmounted(() => {
     <aside
       ref="sidebarRef"
       :class="[
-        'fixed md:static top-0 left-0 h-full w-64 bg-gray-100 flex flex-col border-r border-gray-200 z-40 transition-transform duration-300',
+        'fixed md:static top-0 left-0 h-full w-64 bg-gray-50 flex flex-col border-r border-gray-200 z-40 transition-transform duration-300',
         isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       ]"
     >
       <!-- Navbar Sidebar -->
       <div
-        class="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-100"
+        class="flex items-center justify-between border-b border-gray-200 bg-gray-50 p-3 mt-1 sm:mt-0 sm:p-4 md:p-5"
       >
         <!-- Logo kiri -->
         <div class="flex items-center gap-2">
-          <img src="/favicon.ico" alt="Logo" class="h-6 w-6" />
-          <span class="font-semibold text-gray-800">Nuxt Gemini Chatbot</span>
+          <img src="/favicon.ico" alt="Logo" class="h-5 w-5" />
+          <span class="font-semibold text-gray-800">&nbsp;</span>
         </div>
         <!-- Tombol silang kanan (hanya mobile) -->
         <button
@@ -327,6 +332,47 @@ onUnmounted(() => {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Profile Section -->
+      <div class="p-4 border-t border-gray-200 bg-gray-50">
+        <div class="flex items-center gap-3">
+          <!-- User Avatar -->
+          <div class="flex-shrink-0">
+            <div
+              class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center"
+            >
+              <span class="text-white text-sm font-medium">JD</span>
+            </div>
+          </div>
+
+          <!-- User Name -->
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900 truncate">John Doe</p>
+            <p class="text-xs text-gray-500 truncate">john.doe@example.com</p>
+          </div>
+
+          <!-- Logout Button -->
+          <div class="flex-shrink-0">
+            <button
+              @click="handleLogout"
+              class="p-2 cursor-pointer text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+              title="Logout"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                height="16px"
+                viewBox="0 -960 960 960"
+                width="16px"
+                fill="currentColor"
+              >
+                <path
+                  d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z"
+                />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
