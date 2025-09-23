@@ -5,6 +5,11 @@ import ChatSidebar from "@/components/ChatSidebar.vue";
 import ChatWindow from "@/components/ChatWindow.vue";
 import { useChat } from "@/composables/useChat";
 
+// Apply authentication middleware
+definePageMeta({
+  middleware: "auth",
+});
+
 // Get session ID from route params
 const route = useRoute();
 const router = useRouter();
@@ -71,50 +76,41 @@ const appName = $config.public.appName;
 </script>
 
 <template>
-  <div class="flex h-screen bg-gray-50 overflow-hidden">
+  <div class="flex h-full bg-gray-50 overflow-hidden">
     <!-- Sidebar -->
     <ChatSidebar :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
 
     <!-- Main content -->
     <div class="flex-1 flex flex-col h-full min-h-0">
-      <!-- Navbar/Header (mobile & desktop) -->
-      <header
-        class="flex items-center justify-between p-4 bg-white border-b border-gray-100 shadow-xl"
+      <!-- Mobile sidebar toggle (only on mobile) -->
+      <div
+        class="md:hidden flex items-center justify-between p-4 bg-white border-b border-gray-100"
       >
-        <div class="flex items-center gap-2">
-          <button
-            @click="toggleSidebar"
-            class="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors touch-manipulation"
-            type="button"
-            aria-label="Toggle sidebar"
+        <button
+          @click="toggleSidebar"
+          class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors touch-manipulation"
+          type="button"
+          aria-label="Toggle sidebar"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-6 h-6"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="w-6 h-6"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-              />
-            </svg>
-          </button>
-          <span class="font-semibold text-gray-900">{{ appName }}</span>
-        </div>
-        <!-- Desktop navigation -->
-        <div class="hidden md:flex items-center gap-4">
-          <NuxtLink
-            to="/"
-            class="text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md transition-colors"
-          >
-            ← Back to Home
-          </NuxtLink>
-        </div>
-      </header>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+            />
+          </svg>
+        </button>
+        <span class="font-semibold text-gray-900">{{ appName }}</span>
+        <div></div>
+        <!-- Spacer for center alignment -->
+      </div>
 
       <!-- Main content area -->
       <div class="flex-1 min-h-0">
