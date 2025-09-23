@@ -8,6 +8,11 @@ import ChatInputPanel from "@/components/ChatInputPanel.vue";
 import RecordingPanel from "@/components/RecordingPanel.vue";
 import { useChat } from "@/composables/useChat";
 
+// Apply authentication middleware
+definePageMeta({
+  middleware: "auth",
+});
+
 const router = useRouter();
 const isSidebarOpen = ref(false);
 const showRecording = ref(false);

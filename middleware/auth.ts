@@ -7,10 +7,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // Periksa apakah user sudah terantentikasi
   const { isAuthenticated, checkAuth } = useAuth();
 
-  // Check auth status if not already known
-  if (!isAuthenticated.value) {
-    await checkAuth();
-  }
+  // Always check auth status to ensure fresh data
+  await checkAuth();
 
   if (!isAuthenticated.value) {
     // Store intended destination for redirect after login

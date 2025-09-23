@@ -47,9 +47,9 @@ export const useAuth = () => {
     }
   };
 
-  const checkAuth = async () => {
-    // Prevent multiple simultaneous calls
-    if (isLoading.value || isInitialized.value) {
+  const checkAuth = async (forceCheck = false) => {
+    // Prevent multiple simultaneous calls, but allow force check
+    if (isLoading.value || (!forceCheck && isInitialized.value)) {
       return;
     }
 
