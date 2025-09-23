@@ -19,8 +19,14 @@ const route = useRoute();
 // Global auth check
 const { checkAuth } = useAuth();
 
-// Check authentication on app startup
+// Check authentication on app startup (only for non-protected pages)
 onMounted(() => {
-  checkAuth();
+  // Skip auth check if middleware will handle it
+  if (
+    !route.path.startsWith("/chat") &&
+    !route.path.startsWith("/auth/sign-out")
+  ) {
+    checkAuth();
+  }
 });
 </script>

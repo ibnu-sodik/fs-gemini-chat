@@ -70,6 +70,5 @@ const isOnChatPage = computed(() => {
 
 const handleSignOut = async () => {
   await signOut();
-  await navigateTo("/auth/sign-in");
 };
 </script>
