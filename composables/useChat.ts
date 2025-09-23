@@ -118,7 +118,6 @@ export function useChat() {
   }
 
   function clearState() {
-    console.log("Clearing chat state for new conversation");
     activeSessionId.value = "";
     messages.value = [];
     input.value = "";
@@ -320,7 +319,55 @@ export function useChat() {
     isLoading.value = false;
   }
 
-  // Initialize only once
+  async function updateSession(sessionId: string, updates: { title?: string }) {
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      // Update local sessions
+      const sessionIndex = sessions.value.findIndex((s) => s.id === sessionId);
+      if (sessionIndex !== -1 && updates.title) {
+        sessions.value[sessionIndex].title = updates.title;
+      }
+    } catch (error) {
+      console.error("Error updating session:", error);
+      throw error;
+    }
+  }
+
+  async function deleteSession(sessionId: string) {
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      // Remove from local sessions
+      sessions.value = sessions.value.filter((s) => s.id !== sessionId);
+
+      // Clear messages and active session if this was the active session
+      if (activeSessionId.value === sessionId) {
+        activeSessionId.value = "";
+        messages.value = [];
+        input.value = "";
+        uploadedFiles.value = [];
+        isLoading.value = false;
+      }
+    } catch (error) {
+      console.error("Error deleting session:", error);
+      throw error;
+    }
+  } // Initialize only once
   if (!globalState.initialized) {
     // Don't auto-fetch messages on initialization, let route handle it
     onMounted(() => {
@@ -337,6 +384,8 @@ export function useChat() {
     setModel,
     newChat,
     updateSessionTitle,
+    updateSession,
+    deleteSession,
     generateTitleFromMessage,
     messages,
     input,

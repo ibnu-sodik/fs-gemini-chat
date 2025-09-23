@@ -69,11 +69,7 @@ function toggleSidebar() {
 <template>
   <div class="flex h-screen bg-gray-50 overflow-hidden">
     <!-- Sidebar -->
-    <ChatSidebar
-      :is-open="isSidebarOpen"
-      @close="isSidebarOpen = false"
-      class="w-64 flex-shrink-0"
-    />
+    <ChatSidebar :is-open="isSidebarOpen" @close="isSidebarOpen = false" />
 
     <!-- Main content -->
     <div class="flex-1 flex flex-col h-full min-h-0">

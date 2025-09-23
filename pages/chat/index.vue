@@ -41,8 +41,6 @@ const {
 clearState();
 displayedContent.value = {}; // Also clear local displayed content
 
-console.log("Initialized /chat page - cleared messages and session");
-
 const modelOptions = [
   { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
   { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
@@ -63,7 +61,6 @@ async function handleSend() {
         uploadedFiles.value.length > 0 ? [...uploadedFiles.value] : undefined,
     };
 
-    console.log("Step 1: Displaying user message and disabling send button");
     messages.value.push(userMessage);
     displayedContent.value[userMessage.id] = userMessage.content;
     isLoading.value = true; // Disable send button
@@ -75,17 +72,16 @@ async function handleSend() {
     try {
       // Step 2: Buat session baru jika belum ada
       if (!activeSessionId.value) {
-        console.log("Step 2: Creating new chat session");
         const sessionId = await createNewSession();
         activeSessionId.value = sessionId;
 
         // Step 3: Navigate ke URL session baru
-        console.log("Step 3: Navigating to new session URL");
+
         await router.push(`/chat/${sessionId}`);
       }
 
       // Step 4: Kirim pesan ke backend
-      console.log("Step 4: Sending message to backend");
+
       await sendMessageToBackend(currentInput, userMessage);
     } catch (error) {
       console.error("Error in handleSend:", error);
@@ -121,7 +117,6 @@ async function createNewSession() {
   }
 
   const data = await res.json();
-  console.log("Created new session:", data.session.id);
 
   // Add session to local sessions array immediately
   const { sessions } = useChat();
@@ -162,8 +157,6 @@ async function sendMessageToBackend(messageContent: string, userMessage: any) {
     }
 
     const data = await res.json();
-    console.log("API Response data:", data);
-    console.log("Response content:", data.response);
 
     // Remove loading bubble
     const loadingIndex = messages.value.findIndex((m) => m.id === "loading");
@@ -173,7 +166,6 @@ async function sendMessageToBackend(messageContent: string, userMessage: any) {
     }
 
     // Step 6: Tampilkan respons Gemini dengan animasi
-    console.log("Step 6: Displaying Gemini response with animation");
 
     // Try different possible response fields - API should return { response, role, isAIResponse }
     const responseContent =
@@ -182,7 +174,6 @@ async function sendMessageToBackend(messageContent: string, userMessage: any) {
       data.content ||
       data.text ||
       "[No response from AI]";
-    console.log("Final response content:", responseContent);
 
     const assistantMsg = {
       id: `a-${Date.now()}`,
@@ -196,7 +187,6 @@ async function sendMessageToBackend(messageContent: string, userMessage: any) {
     // Step 5: Update session title (hanya untuk pesan pertama)
     const messageCount = messages.value.filter((m) => m.role === "user").length;
     if (messageCount === 1) {
-      console.log("Step 5: Updating session title in sidebar");
       await updateSessionTitle(messageContent);
     }
 
@@ -232,7 +222,6 @@ async function updateSessionTitle(messageContent: string) {
 
     if (res.ok) {
       // Update local sessions for sidebar
-      console.log("Session title updated successfully in backend");
 
       // Fetch sessions to ensure we have the latest data
       await fetchSessions(false);
@@ -240,16 +229,9 @@ async function updateSessionTitle(messageContent: string) {
       const sessionIndex = sessions.value.findIndex(
         (s) => s.id === activeSessionId.value
       );
-      console.log(
-        "Session index found:",
-        sessionIndex,
-        "Total sessions:",
-        sessions.value.length
-      );
 
       if (sessionIndex !== -1) {
         sessions.value[sessionIndex].title = title;
-        console.log("Updated session title in sidebar:", title);
       } else {
         console.log(
           "Session not found in sessions array, activeSessionId:",
@@ -281,7 +263,6 @@ function scrollToBottom(opts: { instant?: boolean } = {}) {
 
 // Animasi typing untuk pesan Gemini
 function animateMessage(id: string, content: string) {
-  console.log("Starting animation for message:", id, "Length:", content.length);
   isAnimating.value = true;
 
   displayedContent.value[id] = "";
@@ -292,7 +273,7 @@ function animateMessage(id: string, content: string) {
     scrollToBottom({ instant: false });
     if (i >= content.length) {
       clearInterval(interval);
-      console.log("Animation completed for message:", id);
+
       isAnimating.value = false;
     }
   }, 30); // 30ms per huruf
