@@ -84,7 +84,7 @@ function toggleSidebar() {
           >
             ☰
           </button>
-          <span class="font-semibold text-gray-900">Gemini Chat</span>
+          <span class="font-semibold text-gray-900">Nuxt Gemini Chatbot</span>
         </div>
         <!-- Desktop navigation -->
         <div class="hidden md:flex items-center gap-4">
