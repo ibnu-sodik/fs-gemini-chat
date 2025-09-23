@@ -1,7 +1,13 @@
+// Global state to prevent multiple calls
+const globalState = {
+  isAuthenticated: ref(false),
+  user: ref(null),
+  isLoading: ref(false),
+  isInitialized: ref(false),
+};
+
 export const useAuth = () => {
-  const isAuthenticated = ref(false);
-  const user = ref(null);
-  const isLoading = ref(false);
+  const { isAuthenticated, user, isLoading, isInitialized } = globalState;
 
   const signIn = async () => {
     try {
@@ -30,6 +36,7 @@ export const useAuth = () => {
         // Clear local state
         isAuthenticated.value = false;
         user.value = null;
+        isInitialized.value = false;
         // Redirect ke Logto sign out URL
         await navigateTo(response.signOutUrl, { external: true });
       }
@@ -41,6 +48,11 @@ export const useAuth = () => {
   };
 
   const checkAuth = async () => {
+    // Prevent multiple simultaneous calls
+    if (isLoading.value || isInitialized.value) {
+      return;
+    }
+
     try {
       isLoading.value = true;
       const response = (await $fetch("/api/auth/me")) as {
@@ -49,10 +61,12 @@ export const useAuth = () => {
       };
       isAuthenticated.value = response.isAuthenticated;
       user.value = response.user;
+      isInitialized.value = true;
     } catch (error) {
       console.error("Auth check error:", error);
       isAuthenticated.value = false;
       user.value = null;
+      isInitialized.value = true;
     } finally {
       isLoading.value = false;
     }
@@ -60,6 +74,7 @@ export const useAuth = () => {
 
   // Auto-refresh auth state when returning to the app
   const refreshAuth = () => {
+    isInitialized.value = false;
     checkAuth();
   };
 
@@ -67,6 +82,7 @@ export const useAuth = () => {
     isAuthenticated,
     user,
     isLoading,
+    isInitialized,
     signIn,
     signOut,
     checkAuth,
