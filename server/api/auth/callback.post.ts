@@ -17,27 +17,29 @@ export default defineEventHandler(async (event) => {
     }
 
     // Exchange authorization code for access token
-    const tokenResponse = (await $fetch(
-      `${config.public.logtoEndpoint}/oidc/token`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          client_id: config.public.logtoAppId as string,
-          client_secret: config.logtoAppSecret as string,
-          code,
-          redirect_uri: `${getRequestURL(event).origin}/auth/callback`,
-        }).toString(),
-      }
-    )) as {
+    interface TokenResponse {
       access_token: string;
       id_token: string;
       token_type: string;
       expires_in: number;
-    };
+    }
+
+    const tokenUrl = `${config.public.logtoEndpoint}/oidc/token`;
+    const tokenBody = new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: config.public.logtoAppId as string,
+      client_secret: config.logtoAppSecret as string,
+      code,
+      redirect_uri: `${getRequestURL(event).origin}/auth/callback`,
+    }).toString();
+
+    const tokenResponse: TokenResponse = await $fetch(tokenUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: tokenBody,
+    });
 
     if (!tokenResponse.access_token) {
       throw createError({
@@ -47,16 +49,19 @@ export default defineEventHandler(async (event) => {
     }
 
     // Get user info using access token
-    const userInfo = (await $fetch(`${config.public.logtoEndpoint}/oidc/me`, {
-      headers: {
-        Authorization: `Bearer ${tokenResponse.access_token}`,
-      },
-    })) as {
+    interface UserInfo {
       sub: string;
       email?: string;
       name?: string;
       picture?: string;
-    };
+    }
+
+    const userInfoUrl = `${config.public.logtoEndpoint}/oidc/me`;
+    const userInfo: UserInfo = await $fetch(userInfoUrl, {
+      headers: {
+        Authorization: `Bearer ${tokenResponse.access_token}`,
+      },
+    });
 
     // Save/Update user in database
     const dbUser = await prisma.user.upsert({
