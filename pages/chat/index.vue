@@ -442,7 +442,9 @@ setModel(selectedModel.value);
         </div>
 
         <!-- Input Panel -->
-        <div class="px-4 pb-4 pt-1 shadow-xl">
+        <div
+          class="px-2 sm:px-4 lg:px-24 xl:px-36 2xl:px-48 pb-4 pt-1 shadow-xl"
+        >
           <RecordingPanel
             v-model="showRecording"
             :wave-height="10"

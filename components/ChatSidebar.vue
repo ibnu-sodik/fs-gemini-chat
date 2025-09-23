@@ -122,6 +122,11 @@ function handleLogout() {
   console.log("Logout clicked");
 }
 
+function handleSearchChats() {
+  // TODO: Implement search chats functionality
+  console.log("Search chats clicked");
+}
+
 // Close options when clicking outside
 function closeOptions() {
   showOptionsId.value = null;
@@ -194,35 +199,54 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="flex-1 flex flex-col h-full max-h-24 min-h-0">
+      <div class="px-2 py-2">
         <!-- New Chat Button -->
         <button
           @click="handleNewChat"
-          class="pl-4 px-2 py-2 rounded flex items-center justify-start gap-2 cursor-pointer hover:bg-gray-200 text-gray-700"
+          class="w-full pl-3 pr-2 py-1.5 rounded flex items-center justify-start gap-2 cursor-pointer hover:bg-gray-200 text-gray-700 text-sm transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            height="20px"
+            height="16px"
             viewBox="0 -960 960 960"
-            width="20px"
-            fill="#000"
+            width="16px"
+            fill="currentColor"
           >
             <path
               d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"
             />
           </svg>
-          <span>New Chat</span>
+          <span class="text-sm font-medium">New Chat</span>
+        </button>
+
+        <!-- Search Chats Button -->
+        <button
+          @click="handleSearchChats"
+          class="w-full pl-3 pr-2 py-1.5 rounded flex items-center justify-start gap-2 cursor-pointer hover:bg-gray-200 text-gray-700 text-sm transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            height="16px"
+            viewBox="0 -960 960 960"
+            width="16px"
+            fill="currentColor"
+          >
+            <path
+              d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"
+            />
+          </svg>
+          <span class="text-sm font-medium">Search chats</span>
         </button>
       </div>
 
       <!-- Chat Sessions -->
-      <div class="flex-1 overflow-y-auto space-y-1">
-        <span class="pl-4 p-2 text-sm text-gray-500">Chats</span>
+      <div class="flex-1 overflow-y-auto space-y-0.5">
+        <span class="pl-4 py-1 text-xs text-gray-500 block">Chats</span>
         <div
           v-for="s in sessions"
           :key="s.id"
           :class="[
-            'relative group pl-4 p-2 rounded cursor-pointer transition-colors flex items-center justify-between',
+            'relative group pl-3 pr-2 py-1.5 mx-1 rounded cursor-pointer transition-colors flex items-center justify-between text-sm',
             s.id === activeSessionId
               ? 'bg-gray-300/70 text-gray-800'
               : editingSessionId === s.id
@@ -236,20 +260,20 @@ onUnmounted(() => {
             @click="handleSelect(s.id)"
             class="flex-1 truncate flex items-center gap-2"
           >
-            <span>{{ s.title }}</span>
+            <span class="text-sm">{{ s.title }}</span>
             <!-- Typing Indicator untuk Auto-Rename -->
             <div v-if="isTypingTitle === s.id" class="flex items-center gap-1">
               <div class="flex space-x-1">
                 <div
-                  class="w-1 h-1 bg-gray-500 rounded-full animate-bounce"
+                  class="w-0.5 h-0.5 bg-gray-500 rounded-full animate-bounce"
                   style="animation-delay: 0ms"
                 ></div>
                 <div
-                  class="w-1 h-1 bg-gray-500 rounded-full animate-bounce"
+                  class="w-0.5 h-0.5 bg-gray-500 rounded-full animate-bounce"
                   style="animation-delay: 150ms"
                 ></div>
                 <div
-                  class="w-1 h-1 bg-gray-500 rounded-full animate-bounce"
+                  class="w-0.5 h-0.5 bg-gray-500 rounded-full animate-bounce"
                   style="animation-delay: 300ms"
                 ></div>
               </div>
@@ -264,7 +288,7 @@ onUnmounted(() => {
               @keyup.enter="confirmRename"
               @keyup.escape="cancelRename"
               @blur="confirmRename"
-              class="flex-1 p-0 bg-transparent border-none outline-none focus:outline-none focus:ring-0"
+              class="flex-1 p-0 text-sm bg-transparent border-none outline-none focus:outline-none focus:ring-0"
             />
           </div>
 
@@ -280,9 +304,9 @@ onUnmounted(() => {
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                height="16px"
+                height="14px"
                 viewBox="0 -960 960 960"
-                width="16px"
+                width="14px"
                 fill="currentColor"
               >
                 <path
