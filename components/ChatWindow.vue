@@ -302,7 +302,15 @@ const showThumbnails = ref(false);
 import { marked } from "marked";
 import { useChat } from "@/composables/useChat";
 import { nextTick, ref, watch, onMounted, onUnmounted } from "vue";
-const { messages, input, send, isLoading, setModel, uploadedFiles } = useChat();
+const {
+  messages,
+  input,
+  send,
+  isLoading,
+  setModel,
+  uploadedFiles,
+  isLoadingSession,
+} = useChat();
 
 const chatListRef = ref<HTMLElement | null>(null);
 const displayedContent = ref<{ [id: string]: string }>({});
@@ -335,7 +343,11 @@ watch(
   messages,
   (newMessages) => {
     showThumbnails.value = false;
-    scrollToBottom();
+
+    // Only auto-scroll if NOT loading existing session (to preserve scroll position)
+    if (!isLoadingSession.value) {
+      scrollToBottom();
+    }
 
     // Set content untuk semua pesan non-AI response (user messages dan messages lama)
     newMessages.forEach((msg: any) => {
@@ -357,6 +369,17 @@ watch(
   },
   { deep: true }
 );
+
+// Watch for when session loading completes to scroll to bottom (show latest messages)
+watch(isLoadingSession, (loading, wasLoading) => {
+  // When loading changes from true to false (loading completed)
+  if (wasLoading && !loading && messages.value.length > 0) {
+    // Wait a tick for DOM to update, then scroll to bottom to show latest messages
+    nextTick(() => {
+      scrollToBottom({ instant: true }); // Use instant scroll for better UX
+    });
+  }
+});
 watch(selectedModel, (val) => {
   if (val) setModel(val);
 });

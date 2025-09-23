@@ -25,6 +25,7 @@ const globalState = {
   uploadedFiles: ref<any[]>([]),
   isUpdatingSession: ref(false), // Flag to prevent reactivity conflicts
   isTypingTitle: ref<string | null>(null), // Track which session is being auto-renamed
+  isLoadingSession: ref(false), // Flag to distinguish loading existing session vs new messages
   initialized: false,
 };
 
@@ -39,6 +40,7 @@ export function useChat() {
   const uploadedFiles = globalState.uploadedFiles;
   const isUpdatingSession = globalState.isUpdatingSession;
   const isTypingTitle = globalState.isTypingTitle;
+  const isLoadingSession = globalState.isLoadingSession;
 
   async function fetchSessions(shouldFetchMessages: boolean = true) {
     const res = await fetch("/api/sessions");
@@ -108,12 +110,18 @@ export function useChat() {
       return;
     }
 
+    // Set flag to indicate we're loading an existing session
+    isLoadingSession.value = true;
+
     activeSessionId.value = cleanId;
 
     // Clear current messages first
     messages.value = [];
 
     await fetchMessages(cleanId);
+
+    // Clear the flag after loading is complete
+    isLoadingSession.value = false;
   }
   function setModel(model: string = "gemini-1.5-pro") {
     activeModel.value = model;
@@ -126,6 +134,7 @@ export function useChat() {
     uploadedFiles.value = [];
     isLoading.value = false;
     isUpdatingSession.value = false;
+    isLoadingSession.value = false;
   }
 
   async function newChat() {
@@ -497,6 +506,7 @@ export function useChat() {
     uploadedFiles,
     isUpdatingSession,
     isTypingTitle,
+    isLoadingSession,
     fetchSessions,
     clearState,
   };

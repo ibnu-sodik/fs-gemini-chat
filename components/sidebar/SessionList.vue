@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useChat } from "@/composables/useChat";
+import { watch, nextTick } from "vue";
 import SessionItem from "./SessionItem.vue";
 
 const emit = defineEmits(["close", "sessionDelete"]);
@@ -9,8 +10,33 @@ const { sessions, activeSessionId, isTypingTitle } = useChat();
 // State for scroll effects
 const chatSessionsRef = ref<HTMLElement | null>(null);
 const isScrolled = ref(false);
+const SCROLL_STORAGE_KEY = "sidebar-scroll-position";
+
+// Get saved scroll position from session storage
+const getSavedScrollPosition = () => {
+  try {
+    const saved = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+    return saved ? parseInt(saved) : 0;
+  } catch {
+    return 0;
+  }
+};
+
+// Save scroll position to session storage
+const saveScrollPosition = (position: number) => {
+  try {
+    sessionStorage.setItem(SCROLL_STORAGE_KEY, position.toString());
+  } catch {
+    // Ignore storage errors
+  }
+};
 
 function handleSessionSelect(sessionId: string) {
+  // Save current scroll position before navigation
+  if (chatSessionsRef.value) {
+    saveScrollPosition(chatSessionsRef.value.scrollTop);
+  }
+
   // Navigate to specific chat session
   navigateTo(`/chat/${sessionId}`);
   emit("close"); // auto close sidebar di mobile
@@ -28,14 +54,53 @@ function handleSessionRename(data: { sessionId: string; newTitle: string }) {
 function handleChatSessionsScroll() {
   if (chatSessionsRef.value) {
     isScrolled.value = chatSessionsRef.value.scrollTop > 0;
+    // Save scroll position in real-time
+    saveScrollPosition(chatSessionsRef.value.scrollTop);
   }
 }
 
 onMounted(() => {
   if (chatSessionsRef.value) {
     chatSessionsRef.value.addEventListener("scroll", handleChatSessionsScroll);
+
+    // Restore scroll position after component mounts
+    nextTick(() => {
+      if (chatSessionsRef.value) {
+        const savedPosition = getSavedScrollPosition();
+        if (savedPosition > 0) {
+          chatSessionsRef.value.scrollTop = savedPosition;
+        }
+      }
+    });
   }
 });
+
+// Watch for sessions changes and restore scroll position
+watch(
+  sessions,
+  () => {
+    nextTick(() => {
+      if (chatSessionsRef.value) {
+        const savedPosition = getSavedScrollPosition();
+        if (savedPosition > 0) {
+          chatSessionsRef.value.scrollTop = savedPosition;
+        }
+      }
+    });
+  },
+  { flush: "post" }
+);
+
+// Watch activeSessionId changes but DON'T auto-scroll to active item
+// This prevents unwanted scrolling when user clicks on sessions
+watch(
+  activeSessionId,
+  () => {
+    // We intentionally do nothing here to preserve scroll position
+    // Users should manually scroll to see their active session if needed
+  },
+  { immediate: false }
+);
 
 onUnmounted(() => {
   if (chatSessionsRef.value) {
