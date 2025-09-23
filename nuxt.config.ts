@@ -7,6 +7,10 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   css: ["~/assets/css/main.css", "vue3-toastify/dist/index.css"],
   modules: ["@logto/nuxt"],
+  ssr: true,
+  nitro: {
+    preset: "netlify",
+  },
   vite: {
     plugins: [tailwindcss()],
   },
