@@ -192,6 +192,31 @@ export function useChat() {
     return title.length < message.trim().length ? title + "..." : title;
   }
 
+  // Generate title using LLM for better accuracy
+  async function generateTitleWithLLM(
+    message: string,
+    modelOverride?: string
+  ): Promise<string> {
+    const modelToUse = modelOverride || activeModel.value;
+
+    try {
+      const response: any = await $fetch("/api/generate-title", {
+        method: "POST",
+        body: {
+          message: message.trim(),
+          model: modelToUse, // Kirim model yang dipilih user
+        },
+      });
+
+      const finalTitle = response.title || generateTitleFromMessage(message);
+      return finalTitle;
+    } catch (error) {
+      console.error("LLM title generation failed:", error);
+      const fallbackTitle = generateTitleFromMessage(message);
+      return fallbackTitle;
+    }
+  }
+
   async function send() {
     if (!input.value.trim() && uploadedFiles.value.length === 0) return;
 
@@ -270,25 +295,27 @@ export function useChat() {
     // Clear uploaded files immediately
     uploadedFiles.value = [];
 
-    // Kirim ke backend
+    // Kirim ke backend dengan parallel processing
     try {
-      const res = await fetch("/api/chat", {
+      // Prepare promises for parallel execution
+      const chatApiCall = $fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           prompt: promptToSend,
           role: "user",
           sessionId: currentSessionId,
           model: activeModel.value,
-          files: filesData, // Sertakan file yang diunggah
-        }),
+          files: filesData,
+        },
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      let titlePromise: Promise<string> | null = null;
+      if (shouldUpdateTitle && messageContent) {
+        titlePromise = generateTitleWithLLM(messageContent);
       }
 
-      const data = await res.json();
+      // Execute chat API call
+      const data = await chatApiCall;
 
       // Hapus bubble loading
       const idx = messages.value.findIndex((m) => m.id === "loading");
@@ -304,10 +331,17 @@ export function useChat() {
 
       messages.value.push(assistantMsg);
 
-      // Update session title if this was the first message
-      if (shouldUpdateTitle && messageContent) {
-        // Use autoRenameSession for consistency
-        await autoRenameSession(currentSessionId, messageContent);
+      // Handle title generation in background
+      if (titlePromise) {
+        titlePromise
+          .then((generatedTitle) => {
+            autoRenameSessionWithTitle(currentSessionId, generatedTitle);
+          })
+          .catch((error) => {
+            console.error("Title generation failed:", error);
+            // Fallback to simple title
+            autoRenameSession(currentSessionId, messageContent);
+          });
       }
     } catch (error) {
       console.error("Send message error:", error);
@@ -378,11 +412,12 @@ export function useChat() {
     }
   }
 
-  // Helper function for auto-renaming new chats with typing animation
-  async function autoRenameSession(sessionId: string, firstMessage: string) {
-    if (!sessionId || !firstMessage.trim()) return;
-
-    const newTitle = generateTitleFromMessage(firstMessage);
+  // Auto rename session dengan typing animation menggunakan LLM generated title
+  async function autoRenameSessionWithTitle(
+    sessionId: string,
+    newTitle: string
+  ) {
+    if (!sessionId || !newTitle.trim()) return;
 
     // Add delay to ensure AI response animation is complete
     setTimeout(async () => {
@@ -391,8 +426,6 @@ export function useChat() {
 
       // Find session and set temporary typing state
       const sessionIndex = sessions.value.findIndex((s) => s.id === sessionId);
-      const originalTitle =
-        sessionIndex !== -1 ? sessions.value[sessionIndex].title : "New Chat";
 
       if (sessionIndex !== -1) {
         // Animate typing effect
@@ -405,6 +438,14 @@ export function useChat() {
       // Stop typing animation
       isTypingTitle.value = null;
     }, 3000); // 3 second delay
+  }
+
+  // Helper function for auto-renaming new chats with typing animation
+  async function autoRenameSession(sessionId: string, firstMessage: string) {
+    if (!sessionId || !firstMessage.trim()) return;
+
+    const newTitle = generateTitleFromMessage(firstMessage);
+    await autoRenameSessionWithTitle(sessionId, newTitle);
   }
 
   // Animate typing effect for title
@@ -446,7 +487,9 @@ export function useChat() {
     updateSession,
     deleteSession,
     generateTitleFromMessage,
+    generateTitleWithLLM,
     autoRenameSession,
+    autoRenameSessionWithTitle,
     messages,
     input,
     send,

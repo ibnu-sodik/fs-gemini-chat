@@ -36,6 +36,8 @@ const {
   clearState,
   updateSessionTitle: updateSessionTitleComposable,
   autoRenameSession,
+  generateTitleWithLLM,
+  autoRenameSessionWithTitle,
 } = useChat();
 
 // Clear messages and session when on /chat page (not /chat/[sessionId])
@@ -186,12 +188,21 @@ async function sendMessageToBackend(messageContent: string, userMessage: any) {
 
     messages.value.push(assistantMsg);
 
-    // Step 5: Update session title (hanya untuk pesan pertama)
+    // Step 5: Update session title (hanya untuk pesan pertama) dengan LLM
     const messageCount = messages.value.filter((m) => m.role === "user").length;
     if (messageCount === 1) {
-      console.log("Step 5: Updating session title in sidebar");
-      // Use autoRenameSession for consistency
-      await autoRenameSession(activeSessionId.value, messageContent);
+      // Use LLM title generation
+      try {
+        const generatedTitle = await generateTitleWithLLM(
+          messageContent,
+          selectedModel.value
+        );
+        await autoRenameSessionWithTitle(activeSessionId.value, generatedTitle);
+      } catch (error) {
+        console.error("LLM title generation failed, using fallback:", error);
+        // Fallback ke auto rename sederhana
+        await autoRenameSession(activeSessionId.value, messageContent);
+      }
     }
 
     // Start animation
