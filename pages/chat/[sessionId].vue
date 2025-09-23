@@ -64,6 +64,10 @@ const isSidebarOpen = ref(false);
 function toggleSidebar() {
   isSidebarOpen.value = !isSidebarOpen.value;
 }
+
+// Get app name from runtime config
+const { $config } = useNuxtApp();
+const appName = $config.public.appName;
 </script>
 
 <template>
@@ -84,7 +88,7 @@ function toggleSidebar() {
           >
             ☰
           </button>
-          <span class="font-semibold text-gray-900">Nuxt Gemini Chatbot</span>
+          <span class="font-semibold text-gray-900">{{ appName }}</span>
         </div>
         <!-- Desktop navigation -->
         <div class="hidden md:flex items-center gap-4">

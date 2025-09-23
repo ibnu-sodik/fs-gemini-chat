@@ -11,6 +11,10 @@ import { useChat } from "@/composables/useChat";
 const router = useRouter();
 const isSidebarOpen = ref(false);
 const showRecording = ref(false);
+
+// Get app name from runtime config
+const { $config } = useNuxtApp();
+const appName = $config.public.appName;
 const showThumbnails = ref(false);
 const displayedContent = ref<{ [id: string]: string }>({});
 const chatListRef = ref<HTMLElement | null>(null);
@@ -300,7 +304,7 @@ setModel(selectedModel.value);
           >
             ☰
           </button>
-          <span class="font-semibold text-gray-900">Nuxt Gemini Chatbot</span>
+          <span class="font-semibold text-gray-900">{{ appName }}</span>
         </div>
         <!-- Desktop navigation -->
         <div class="hidden md:flex items-center gap-4">

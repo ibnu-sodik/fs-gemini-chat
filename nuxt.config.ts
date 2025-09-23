@@ -9,4 +9,11 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
   },
+  runtimeConfig: {
+    // Private keys (only available on server-side)
+    // Public keys (exposed to client-side)
+    public: {
+      appName: process.env.APP_NAME || "Nuxt Gemini Chatbot",
+    },
+  },
 });
