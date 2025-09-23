@@ -1,3 +1,7 @@
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
 
@@ -54,12 +58,34 @@ export default defineEventHandler(async (event) => {
       picture?: string;
     };
 
+    // Save/Update user in database
+    const dbUser = await prisma.user.upsert({
+      where: { logtoId: userInfo.sub },
+      create: {
+        logtoId: userInfo.sub,
+        email: userInfo.email || "",
+        name: userInfo.name || userInfo.email?.split("@")[0] || "User",
+        avatar: userInfo.picture,
+        lastLoginAt: new Date(),
+        isActive: true,
+      },
+      update: {
+        email: userInfo.email || "",
+        name: userInfo.name || userInfo.email?.split("@")[0] || "User",
+        avatar: userInfo.picture,
+        lastLoginAt: new Date(),
+      },
+    });
+
+    console.log("✅ User saved to database:", dbUser.email);
+
     // Set secure session cookie
     const sessionData = {
-      userId: userInfo.sub,
-      email: userInfo.email,
-      name: userInfo.name,
-      picture: userInfo.picture,
+      userId: dbUser.id, // Use database ID instead of Logto ID
+      logtoId: userInfo.sub,
+      email: dbUser.email,
+      name: dbUser.name,
+      picture: dbUser.avatar,
       accessToken: tokenResponse.access_token,
       expiresAt: Date.now() + tokenResponse.expires_in * 1000,
     };
@@ -80,10 +106,11 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       user: {
-        id: userInfo.sub,
-        email: userInfo.email,
-        name: userInfo.name,
-        picture: userInfo.picture,
+        id: dbUser.id, // Database ID
+        logtoId: userInfo.sub, // Logto ID
+        email: dbUser.email,
+        name: dbUser.name,
+        picture: dbUser.avatar,
       },
     };
   } catch (error) {
@@ -92,5 +119,7 @@ export default defineEventHandler(async (event) => {
       success: false,
       error: error instanceof Error ? error.message : "Authentication failed",
     };
+  } finally {
+    await prisma.$disconnect();
   }
 });
