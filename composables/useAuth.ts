@@ -4,10 +4,12 @@ const globalState = {
   user: ref(null),
   isLoading: ref(false),
   isInitialized: ref(false),
+  pendingPromise: null as Promise<void> | null, // Track ongoing request
 };
 
 export const useAuth = () => {
-  const { isAuthenticated, user, isLoading, isInitialized } = globalState;
+  const { isAuthenticated, user, isLoading, isInitialized, pendingPromise } =
+    globalState;
 
   const signIn = async () => {
     try {
@@ -48,34 +50,46 @@ export const useAuth = () => {
   };
 
   const checkAuth = async (forceCheck = false) => {
+    // If there's already a pending request, wait for it
+    if (globalState.pendingPromise && !forceCheck) {
+      return globalState.pendingPromise;
+    }
+
     // Prevent multiple simultaneous calls, but allow force check
     if (isLoading.value || (!forceCheck && isInitialized.value)) {
       return;
     }
 
-    try {
-      isLoading.value = true;
-      const response = (await $fetch("/api/auth/me")) as {
-        isAuthenticated: boolean;
-        user: any;
-      };
-      isAuthenticated.value = response.isAuthenticated;
-      user.value = response.user;
-      isInitialized.value = true;
-    } catch (error) {
-      console.error("Auth check error:", error);
-      isAuthenticated.value = false;
-      user.value = null;
-      isInitialized.value = true;
-    } finally {
-      isLoading.value = false;
-    }
+    // Create promise and store it globally
+    globalState.pendingPromise = (async () => {
+      try {
+        isLoading.value = true;
+        const response = (await $fetch("/api/auth/me")) as {
+          isAuthenticated: boolean;
+          user: any;
+        };
+        isAuthenticated.value = response.isAuthenticated;
+        user.value = response.user;
+        isInitialized.value = true;
+      } catch (error) {
+        console.error("Auth check error:", error);
+        isAuthenticated.value = false;
+        user.value = null;
+        isInitialized.value = true;
+      } finally {
+        isLoading.value = false;
+        globalState.pendingPromise = null; // Clear pending promise
+      }
+    })();
+
+    return globalState.pendingPromise;
   };
 
   // Auto-refresh auth state when returning to the app
   const refreshAuth = () => {
     isInitialized.value = false;
-    checkAuth();
+    globalState.pendingPromise = null; // Clear any pending request
+    return checkAuth();
   };
 
   return {

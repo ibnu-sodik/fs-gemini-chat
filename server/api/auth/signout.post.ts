@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
 
     // Generate sign out URL untuk Logto
     const baseUrl = getRequestURL(event).origin;
-    const postLogoutRedirectUri = `${baseUrl}/auth/sign-in`;
+    const postLogoutRedirectUri = `${baseUrl}/`; // Redirect
 
     // Buat URL sign out dengan parameter yang diperlukan
     const signOutUrl =

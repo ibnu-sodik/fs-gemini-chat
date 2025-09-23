@@ -1,10 +1,8 @@
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  const { isAuthenticated, checkAuth } = useAuth();
+  const { isAuthenticated, refreshAuth } = useAuth();
 
-  // Check auth status jika belum diketahui
-  if (!isAuthenticated.value) {
-    await checkAuth();
-  }
+  // Force check auth status to get fresh data
+  await refreshAuth();
 
   // Jika user sudah login, redirect ke chat
   if (isAuthenticated.value) {

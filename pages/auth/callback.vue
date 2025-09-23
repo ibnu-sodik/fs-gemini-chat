@@ -68,9 +68,20 @@ onMounted(async () => {
     })) as { success: boolean; error?: string };
 
     if (response.success) {
+      // Small delay to ensure cookie is set
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Force refresh auth state immediately
+      const { refreshAuth } = useAuth();
+      await refreshAuth();
+
+      // Another small delay to ensure state is updated
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Redirect to intended page or home
       const redirectTo = sessionStorage.getItem("auth-redirect") || "/chat";
       sessionStorage.removeItem("auth-redirect");
+
       await navigateTo(redirectTo);
     } else {
       isError.value = true;
