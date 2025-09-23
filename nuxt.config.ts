@@ -10,21 +10,18 @@ export default defineNuxtConfig({
   ssr: true,
   nitro: {
     preset: "netlify",
-    experimental: {
-      wasm: true
-    },
     rollupConfig: {
-      external: ['@prisma/client']
-    }
+      external: ["@prisma/client"],
+    },
   },
   vite: {
     plugins: [tailwindcss()],
     optimizeDeps: {
-      exclude: ['@prisma/client']
+      exclude: ["@prisma/client"],
     },
     define: {
-      global: 'globalThis'
-    }
+      global: "globalThis",
+    },
   },
   runtimeConfig: {
     // Private keys (only available on server-side)
