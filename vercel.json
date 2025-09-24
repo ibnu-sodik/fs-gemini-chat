@@ -12,5 +12,15 @@
         "deploymentEnabled": {
             "dev": false
         }
-    }
+    },
+    "routes": [
+        {
+            "src": "/_nuxt/(.*)",
+            "dest": "/_nuxt/$1"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/"
+        }
+    ]
 }
