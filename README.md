@@ -1,153 +1,78 @@
-# Nuxt Gemini Chatbot# Nuxt Minimal Starter
+# Nuxt Gemini Chatbot
 
+A modern chatbot application built with Nuxt.js and Google's Gemini AI. This application features authentication via Logto, real-time chat interactions with Gemini AI, chat history management, and voice input capabilities.
 
+## Tech Stack
 
-A modern chatbot application built with Nuxt.js and Google's Gemini AI. This application features authentication via Logto, real-time chat interactions with Gemini AI, chat history management, and voice input capabilities.Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
-
-
-
-## Tech Stack## Setup
-
-
-
-- **Frontend Framework:** Nuxt.js 3Make sure to install dependencies:
-
+- **Frontend Framework:** Nuxt.js 3
 - **UI Framework:** Vue.js 3
-
-- **Styling:** Tailwind CSS```bash
-
-- **Authentication:** Logto# npm
-
-- **Database:** PostgreSQLnpm install
-
+- **Styling:** Tailwind CSS
+- **Authentication:** Logto
+- **Database:** PostgreSQL
 - **ORM:** Prisma
-
-- **AI Integration:** Google Gemini AI# pnpm
-
-- **Voice Processing:** WaveSurfer.jspnpm install
-
+- **AI Integration:** Google Gemini AI
+- **Voice Processing:** WaveSurfer.js
 - **TypeScript** for type safety
 
-# yarn
+## Prerequisites
 
-## Prerequisitesyarn install
-
-
-
-- Node.js 18 or higher# bun
-
-- PostgreSQL databasebun install
-
-- Logto account and application setup```
-
+- Node.js 18 or higher
+- PostgreSQL database
+- Logto account and application setup
 - Google Cloud account with Gemini API access
 
-## Development Server
-
 ## Getting Started
-
-Start the development server on `http://localhost:3000`:
 
 ### 1. Clone the Repository
 
 ```bash
-
-```bash# npm
-
-git clone https://github.com/ibnu-sodik/fs-gemini-chat.gitnpm run dev
-
+git clone https://github.com/ibnu-sodik/fs-gemini-chat.git
 cd fs-gemini-chat
-
-```# pnpm
-
-pnpm dev
+```
 
 ### 2. Install Dependencies
 
-# yarn
-
-```bashyarn dev
-
-npm install
-
-```# bun
-
-bun run dev
-
-### 3. Environment Setup```
-
-
-
-1. Copy the example environment file:## Production
-
 ```bash
-
-cp .env.example .envBuild the application for production:
-
+npm install
 ```
 
+### 3. Environment Setup
+
+1. Copy the example environment file:
 ```bash
+cp .env.example .env
+```
 
-2. Fill in your environment variables in `.env`:# npm
-
-```bashnpm run build
-
+2. Fill in your environment variables in `.env`:
+```bash
 DATABASE_URL=your_postgresql_connection_string
-
-GOOGLE_API_KEY=your_google_gemini_api_key# pnpm
-
-NUXT_LOGTO_APP_SECRET=your_logto_app_secretpnpm build
-
+GOOGLE_API_KEY=your_google_gemini_api_key
+NUXT_LOGTO_APP_SECRET=your_logto_app_secret
 NUXT_LOGTO_COOKIE_ENCRYPTION_KEY=your_logto_cookie_encryption_key
-
-NUXT_LOGTO_ENDPOINT=your_logto_endpoint# yarn
-
-NUXT_LOGTO_APP_ID=your_logto_app_idyarn build
-
+NUXT_LOGTO_ENDPOINT=your_logto_endpoint
+NUXT_LOGTO_APP_ID=your_logto_app_id
 APP_NAME=Nuxt Gemini Chatbot
+```
 
-```# bun
+### 4. Database Setup
 
-bun run build
+Run the database migrations:
 
-### 4. Database Setup```
+```bash
+npx prisma migrate dev
+```
 
-
-
-Run the database migrations:Locally preview production build:
-
-
-
-```bash```bash
-
-npx prisma migrate dev# npm
-
-```npm run preview
-
-
-
-This will:# pnpm
-
-- Create the database if it doesn't existpnpm preview
-
+This will:
+- Create the database if it doesn't exist
 - Apply all pending migrations
-
-- Generate the Prisma Client# yarn
-
-yarn preview
+- Generate the Prisma Client
 
 ### 5. Run the Application
 
-# bun
-
-Start the development server:bun run preview
-
-```
+Start the development server:
 
 ```bash
-
-npm run devCheck out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
-
+npm run dev
 ```
 
 The application will be available at `http://localhost:3000`
