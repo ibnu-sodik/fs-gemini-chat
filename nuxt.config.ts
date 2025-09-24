@@ -16,12 +16,14 @@ export default defineNuxtConfig({
     rollupConfig: {
       external: ['@prisma/client'],
     },
+    esbuild: {
+      options: {
+        target: 'node18'
+      }
+    }
   },
   vite: {
     plugins: [tailwindcss()],
-    optimizeDeps: {
-      exclude: ["@prisma/client"],
-    },
     define: {
       global: "globalThis",
     },

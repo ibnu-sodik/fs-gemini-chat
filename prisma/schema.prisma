@@ -5,7 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
 datasource db {
@@ -15,49 +16,48 @@ datasource db {
 
 model User {
   id          String        @id @default(cuid()) // ID unik dari CUID
-  email       String        @unique             // Email pengguna, digunakan untuk login
-  name        String?                           // Nama pengguna (bisa null saat pertama kali)
-  avatar      String?                           // URL foto profil pengguna
-  logtoId     String        @unique             // ID dari Logto untuk sinkronisasi
-  isActive    Boolean       @default(true)      // Status aktif pengguna
-  lastLoginAt DateTime?                         // Timestamp login terakhir
-  createdAt   DateTime      @default(now())     // Timestamp pembuatan akun
-  updatedAt   DateTime      @updatedAt @default(now()) // Timestamp update terakhir
-  sessions    ChatSession[]                     // Relasi ke semua sesi chat milik pengguna
+  email       String        @unique // Email pengguna, digunakan untuk login
+  name        String? // Nama pengguna (bisa null saat pertama kali)
+  avatar      String? // URL foto profil pengguna
+  logtoId     String        @unique // ID dari Logto untuk sinkronisasi
+  isActive    Boolean       @default(true) // Status aktif pengguna
+  lastLoginAt DateTime? // Timestamp login terakhir
+  createdAt   DateTime      @default(now()) // Timestamp pembuatan akun
+  updatedAt   DateTime      @default(now()) @updatedAt // Timestamp update terakhir
+  sessions    ChatSession[] // Relasi ke semua sesi chat milik pengguna
 }
 
 model ChatSession {
   id        String    @id @default(cuid())
-  title     String    @default("New Chat")      // Judul sesi, bisa di-update dengan fitur bonus
+  title     String    @default("New Chat") // Judul sesi, bisa di-update dengan fitur bonus
   createdAt DateTime  @default(now())
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade) // Hapus sesi jika user dihapus
   messages  Message[]
 }
 
-
 model Message {
-  id          String      @id @default(cuid())
-  content     String      @db.Text                  // Gunakan tipe Text untuk pesan yang panjang
-  role        String      // "user" atau "assistant"
-  createdAt   DateTime    @default(now())
-  sessionId   String
-  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade) // Hapus pesan jika sesi dihapus
+  id        String      @id @default(cuid())
+  content   String      @db.Text // Gunakan tipe Text untuk pesan yang panjang
+  role      String // "user" atau "assistant"
+  createdAt DateTime    @default(now())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade) // Hapus pesan jika sesi dihapus
 
   // Untuk fitur bonus percabangan pesan
   parentMessageId String?
-  parentMessage   Message?    @relation("MessageBranch", fields: [parentMessageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  children        Message[]   @relation("MessageBranch")
+  parentMessage   Message?  @relation("MessageBranch", fields: [parentMessageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children        Message[] @relation("MessageBranch")
 
-  files        File[]    // Relasi ke file
+  files File[] // Relasi ke file
 }
 
 model File {
-  id         String   @id @default(cuid())
-  name       String
-  type       String
-  base64     String   @db.Text
-  createdAt  DateTime @default(now())
-  messageId  String
-  message    Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  name      String
+  type      String
+  base64    String   @db.Text
+  createdAt DateTime @default(now())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
 }
