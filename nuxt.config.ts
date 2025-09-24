@@ -21,6 +21,9 @@ export default defineNuxtConfig({
       },
     },
   },
+  devServer: {
+    port: Number(process.env.PORT) || 3000,
+  },
   vite: {
     plugins: [tailwindcss()],
     define: {

@@ -1,0 +1,16 @@
+{
+    "version": 2,
+    "buildCommand": "prisma generate && nuxt build",
+    "builds": [
+        {
+            "src": "nuxt.config.ts",
+            "use": "@vercel/node"
+        }
+    ],
+    "framework": "nuxt",
+    "git": {
+        "deploymentEnabled": {
+            "dev": false
+        }
+    }
+}
