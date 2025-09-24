@@ -1,6 +1,6 @@
 # Nuxt Gemini Chatbot
 
-A modern chatbot application built with Nuxt.js and Google's Gemini AI. This application features authentication via Logto, real-time chat interactions with Gemini AI, chat history management, and voice input capabilities.
+A minimalist chatbot application built with Nuxt.js and Google's Gemini AI. It features authentication via Logto, real-time chat interaction with Gemini AI, chat history management, and voice input capabilities.
 
 ## Tech Stack
 
@@ -39,11 +39,13 @@ npm install
 ### 3. Environment Setup
 
 1. Copy the example environment file:
+
 ```bash
 cp .env.example .env
 ```
 
 2. Fill in your environment variables in `.env`:
+
 ```bash
 DATABASE_URL=your_postgresql_connection_string
 GOOGLE_API_KEY=your_google_gemini_api_key
@@ -63,6 +65,7 @@ npx prisma migrate dev
 ```
 
 This will:
+
 - Create the database if it doesn't exist
 - Apply all pending migrations
 - Generate the Prisma Client
