@@ -1,4 +1,0 @@
-const ChatWindow_vue_vue_type_style_index_0_scoped_44f6d91a_lang = ".prose[data-v-44f6d91a]{word-wrap:break-word;-webkit-hyphens:auto;hyphens:auto;word-break:break-word}.prose[data-v-44f6d91a] table{border-collapse:collapse;display:block;margin:1rem 0;overflow-x:auto;white-space:nowrap;width:100%}@media (max-width:640px){.prose[data-v-44f6d91a] table{font-size:.875rem}.prose[data-v-44f6d91a] td,.prose[data-v-44f6d91a] th{min-width:80px;padding:.5rem .25rem}}.prose[data-v-44f6d91a] pre{max-width:100%;overflow-x:auto}.prose[data-v-44f6d91a] code{white-space:pre-wrap;word-break:break-all}.prose[data-v-44f6d91a] img{height:auto;max-width:100%}.prose[data-v-44f6d91a] a{overflow-wrap:break-word;word-break:break-all}@media (max-width:640px){.prose[data-v-44f6d91a] ol,.prose[data-v-44f6d91a] ul{padding-left:1.25rem}}";
-
-export { ChatWindow_vue_vue_type_style_index_0_scoped_44f6d91a_lang as C };
-//# sourceMappingURL=ChatWindow-styles-1.mjs-BzDN-LZg.mjs.map
