@@ -6,6 +6,7 @@
 .cache
 dist
 .netlify
+.vercel
 
 # Node dependencies
 node_modules
