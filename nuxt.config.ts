@@ -9,7 +9,7 @@ export default defineNuxtConfig({
   modules: ["@logto/nuxt"],
   ssr: true,
   nitro: {
-    preset: "netlify",
+    preset: "netlify-builder",
     experimental: {
       wasm: true,
     },
