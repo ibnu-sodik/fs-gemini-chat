@@ -19,6 +19,7 @@
     "@logto/node": "^3.1.6",
     "@logto/nuxt": "^1.2.6",
     "@prisma/client": "^6.16.2",
+    "@prisma/extension-accelerate": "^2.0.2",
     "@tailwindcss/vite": "^4.1.13",
     "ai": "^5.0.46",
     "axios": "^1.12.2",
