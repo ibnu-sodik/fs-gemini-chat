@@ -10,17 +10,17 @@ export default defineNuxtConfig({
   ssr: true,
   nitro: {
     preset: "netlify",
-    experimental: {
-      wasm: true,
-    },
+    // experimental: {
+    //   wasm: true,
+    // },
     rollupConfig: {
-      external: ['@prisma/client'],
+      external: ["@prisma/client"],
     },
     esbuild: {
       options: {
-        target: 'node18'
-      }
-    }
+        target: "node18",
+      },
+    },
   },
   vite: {
     plugins: [tailwindcss()],

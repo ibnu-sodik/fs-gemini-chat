@@ -1,15 +1,11 @@
 [build]
-  command = "npm install && npx prisma generate && npm run build"
-  publish = "dist"
+  command = "npm run build"
+  publish = ".output/public"
 
-[build.environment]
-  NODE_VERSION = "20"
+[functions]
+  directory = ".output/server"
 
-# Environment variables yang akan di-set di Netlify dashboard
-# DATABASE_URL - PostgreSQL connection string
-# GOOGLE_API_KEY - Google Gemini API key
-# NUXT_LOGTO_APP_SECRET - Logto app secret
-# NUXT_LOGTO_COOKIE_ENCRYPTION_KEY - Logto cookie encryption key
-# NUXT_LOGTO_ENDPOINT - Logto endpoint URL
-# NUXT_LOGTO_APP_ID - Logto app ID
-# APP_NAME - Application name
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
