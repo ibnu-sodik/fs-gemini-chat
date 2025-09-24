@@ -9,10 +9,9 @@ export default defineNuxtConfig({
   modules: ["@logto/nuxt"],
   ssr: true,
   nitro: {
-    preset: "netlify",
-    // experimental: {
-    //   wasm: true,
-    // },
+    experimental: {
+      wasm: true,
+    },
     rollupConfig: {
       external: ["@prisma/client"],
     },
