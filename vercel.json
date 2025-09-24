@@ -7,7 +7,7 @@
             "use": "@vercel/node@20"
         }
     ],
-    "framework": "nuxt",
+    "framework": "nuxtjs",
     "git": {
         "deploymentEnabled": {
             "dev": false
