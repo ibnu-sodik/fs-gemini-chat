@@ -20,6 +20,7 @@ export default defineNuxtConfig({
         target: "node18",
       },
     },
+    preset: "vercel",
   },
   devServer: {
     port: Number(process.env.PORT) || 3000,
