@@ -1,6 +1,6 @@
 # Nuxt Gemini Chatbot
 
-A modern chatbot application built with Nuxt.js and Google's Gemini AI. This application features authentication via Logto, real-time chat interactions with Gemini AI, chat history management, and voice input capabilities.
+A minimalist chatbot application built with Nuxt.js and Google's Gemini AI. It features authentication via Logto, real-time chat interaction with Gemini AI, chat history management, and voice input capabilities.
 
 ## Tech Stack
 
