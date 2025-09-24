@@ -1,26 +1,11 @@
 {
     "version": 2,
     "buildCommand": "prisma generate && nuxt build",
-    "builds": [
-        {
-            "src": "nuxt.config.ts",
-            "use": "@vercel/node"
-        }
-    ],
+    "outputDirectory": ".output/public",
     "framework": "nuxtjs",
     "git": {
         "deploymentEnabled": {
             "dev": false
         }
-    },
-    "routes": [
-        {
-            "src": "/_nuxt/(.*)",
-            "dest": "/_nuxt/$1"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/"
-        }
-    ]
+    }
 }
