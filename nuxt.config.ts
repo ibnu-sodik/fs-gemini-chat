@@ -10,6 +10,12 @@ export default defineNuxtConfig({
   ssr: true,
   nitro: {
     preset: "netlify",
+    experimental: {
+      wasm: true,
+    },
+    rollupConfig: {
+      external: ['@prisma/client'],
+    },
   },
   vite: {
     plugins: [tailwindcss()],
@@ -20,7 +26,7 @@ export default defineNuxtConfig({
     logtoCookieEncryptionKey: process.env.NUXT_LOGTO_COOKIE_ENCRYPTION_KEY,
     // Public keys (exposed to client-side)
     public: {
-      appName: process.env.APP_NAME || "Nuxt Gemini Chatbot",
+      appName: process.env.APP_NAME,
       logtoEndpoint: process.env.NUXT_LOGTO_ENDPOINT,
       logtoAppId: process.env.NUXT_LOGTO_APP_ID,
     },
