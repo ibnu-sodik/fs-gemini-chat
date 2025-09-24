@@ -1,5 +1,5 @@
 [build]
-  command = "npm ci && npx prisma generate && npm run build"
+  command = "npm install && npx prisma generate && npm run build"
   publish = "dist"
 
 [build.environment]
