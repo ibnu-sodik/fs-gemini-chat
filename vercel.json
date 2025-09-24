@@ -4,7 +4,7 @@
     "builds": [
         {
             "src": "nuxt.config.ts",
-            "use": "@vercel/node"
+            "use": "@vercel/node@20"
         }
     ],
     "framework": "nuxt",
