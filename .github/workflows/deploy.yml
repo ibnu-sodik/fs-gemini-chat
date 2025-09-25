@@ -2,17 +2,17 @@ name: Deploy to Fly.io
 
 on:
   push:
-    branches: [main, master]
+    branches: [master]
   pull_request:
-    branches: [main, master]
+    branches: [master]
 
 jobs:
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
 
-    # Only run deployment on push to main/master, not on PRs
-    if: github.event_name == 'push'
+    # Only run deployment on push to master branch, not on PRs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
 
     steps:
       - name: Checkout code
