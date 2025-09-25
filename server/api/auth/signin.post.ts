@@ -2,13 +2,23 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
 
   try {
+    // Validate required Logto config before building URL
+    if (!config.public.logtoEndpoint || !config.public.logtoAppId) {
+      throw createError({
+        statusCode: 500,
+        statusMessage:
+          'Missing Logto configuration (NUXT_LOGTO_ENDPOINT / NUXT_LOGTO_APP_ID). Please set Fly secrets and redeploy.',
+      });
+    }
     // Generate sign in URL untuk Logto
     const baseUrl = getRequestURL(event).origin;
     const redirectUri = `${baseUrl}/auth/callback`;
 
     // Buat URL sign in dengan parameter yang diperlukan
+    // Normalise endpoint (remove trailing slash)
+    const endpoint = config.public.logtoEndpoint!.replace(/\/$/, "");
     const signInUrl =
-      `${config.public.logtoEndpoint}/oidc/auth?` +
+      `${endpoint}/oidc/auth?` +
       new URLSearchParams({
         client_id: config.public.logtoAppId as string,
         redirect_uri: redirectUri,

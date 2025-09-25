@@ -9,6 +9,14 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     const { code, state } = body;
 
+    if (!config.public.logtoEndpoint || !config.public.logtoAppId || !config.logtoAppSecret) {
+      throw createError({
+        statusCode: 500,
+        statusMessage:
+          'Missing Logto config (endpoint/appId/appSecret). Ensure NUXT_LOGTO_ENDPOINT, NUXT_LOGTO_APP_ID, NUXT_LOGTO_APP_SECRET are set.'
+      });
+    }
+
     if (!code) {
       throw createError({
         statusCode: 400,
@@ -24,7 +32,8 @@ export default defineEventHandler(async (event) => {
       expires_in: number;
     }
 
-    const tokenUrl = `${config.public.logtoEndpoint}/oidc/token`;
+    const endpoint = config.public.logtoEndpoint.replace(/\/$/, "");
+    const tokenUrl = `${endpoint}/oidc/token`;
     const tokenBody = new URLSearchParams({
       grant_type: "authorization_code",
       client_id: config.public.logtoAppId as string,
@@ -56,7 +65,7 @@ export default defineEventHandler(async (event) => {
       picture?: string;
     }
 
-    const userInfoUrl = `${config.public.logtoEndpoint}/oidc/me`;
+    const userInfoUrl = `${endpoint}/oidc/me`;
     const userInfo: UserInfo = await $fetch(userInfoUrl, {
       headers: {
         Authorization: `Bearer ${tokenResponse.access_token}`,
