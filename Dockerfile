@@ -21,6 +21,7 @@ COPY nuxt.config.ts ./
 
 # 3. Build stage
 FROM base AS build
+ENV NUXT_NO_OXC=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Ensure prisma client is generated before build (script already does, but explicit is fine)
