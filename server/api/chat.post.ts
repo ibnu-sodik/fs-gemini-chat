@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { defineEventHandler, readBody, createError } from "h3";
+import { prisma } from "~/server/utils/prisma";
 
 interface FileData {
   name: string;
@@ -17,8 +18,6 @@ interface Content {
 }
 
 export default defineEventHandler(async (event) => {
-  let prisma: any = null;
-
   try {
     const body = await readBody(event);
 
@@ -27,10 +26,6 @@ export default defineEventHandler(async (event) => {
     if (!apiKey) {
       throw createError({ statusCode: 500, message: "Missing GOOGLE_API_KEY" });
     }
-
-    // Inisialisasi PrismaClient
-    const { PrismaClient } = await import("@prisma/client");
-    prisma = new PrismaClient();
 
     const { prompt, message, role, sessionId, model, files } = body;
 
@@ -141,10 +136,5 @@ export default defineEventHandler(async (event) => {
         message: error instanceof Error ? error.message : "Unknown error",
       },
     });
-  } finally {
-    // Pastikan prisma connection ditutup
-    if (prisma) {
-      await prisma.$disconnect();
-    }
   }
 });

@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import { defineEventHandler } from "h3";
 import { getAuthenticatedUserId } from "~/server/utils/auth";
-
-const prisma = new PrismaClient();
+import { prisma } from "~/server/utils/prisma";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -31,7 +29,5 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       statusMessage: "Failed to get sessions",
     });
-  } finally {
-    await prisma.$disconnect();
   }
 });

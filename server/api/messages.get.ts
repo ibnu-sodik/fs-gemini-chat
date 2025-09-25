@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
 import { defineEventHandler, getQuery } from "h3";
-
-const prisma = new PrismaClient();
+import { prisma } from "~/server/utils/prisma";
 
 export default defineEventHandler(async (event) => {
   console.log("=== API /messages called ===");

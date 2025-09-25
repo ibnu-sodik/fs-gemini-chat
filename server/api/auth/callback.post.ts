@@ -6,6 +6,22 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
 
   try {
+    // Read directly from environment variables, bypassing runtime config issues
+    const logtoEndpoint = config.public.logtoEndpoint || process.env.NUXT_LOGTO_ENDPOINT || process.env.LOGTO_ENDPOINT;
+    const logtoAppId = config.public.logtoAppId || process.env.NUXT_LOGTO_APP_ID || process.env.LOGTO_APP_ID;
+    const logtoAppSecret = config.logtoAppSecret || process.env.NUXT_LOGTO_APP_SECRET || process.env.LOGTO_APP_SECRET;
+
+    console.log('Callback - logtoEndpoint:', !!logtoEndpoint);
+    console.log('Callback - logtoAppId:', !!logtoAppId);
+    console.log('Callback - logtoAppSecret:', !!logtoAppSecret);
+
+    if (!logtoEndpoint || !logtoAppId || !logtoAppSecret) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Missing Logto configuration in callback",
+      });
+    }
+
     const body = await readBody(event);
     const { code, state } = body;
 
@@ -24,11 +40,11 @@ export default defineEventHandler(async (event) => {
       expires_in: number;
     }
 
-    const tokenUrl = `${config.public.logtoEndpoint}/oidc/token`;
+    const tokenUrl = `${logtoEndpoint}/oidc/token`;
     const tokenBody = new URLSearchParams({
       grant_type: "authorization_code",
-      client_id: config.public.logtoAppId as string,
-      client_secret: config.logtoAppSecret as string,
+      client_id: logtoAppId,
+      client_secret: logtoAppSecret,
       code,
       redirect_uri: `${getRequestURL(event).origin}/auth/callback`,
     }).toString();
@@ -56,7 +72,7 @@ export default defineEventHandler(async (event) => {
       picture?: string;
     }
 
-    const userInfoUrl = `${config.public.logtoEndpoint}/oidc/me`;
+    const userInfoUrl = `${logtoEndpoint}/oidc/me`;
     const userInfo: UserInfo = await $fetch(userInfoUrl, {
       headers: {
         Authorization: `Bearer ${tokenResponse.access_token}`,
