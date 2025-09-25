@@ -15,7 +15,13 @@ WORKDIR /app
 FROM base AS deps
 # Copy package manifests first for better layer caching
 COPY package.json package-lock.json* ./
-RUN npm ci --no-audit --no-fund
+# Environment tweaks to reduce native/peer conflicts
+ENV NUXT_NO_OXC=1 \
+  NPM_CONFIG_FUND=false \
+  NPM_CONFIG_AUDIT=false \
+  NPM_CONFIG_LEGACY_PEER_DEPS=true
+# Use npm install (not ci) to avoid strict lock sync issues observed in remote build
+RUN npm install --no-audit --no-fund
 COPY prisma ./prisma
 COPY nuxt.config.ts ./
 
