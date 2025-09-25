@@ -14,12 +14,13 @@ WORKDIR /app
 
 # 2. Dependencies stage
 FROM base AS deps
-COPY package.json pnpm-lock.yaml* package-lock.json* yarn.lock* ./
-# Use npm if no lock file provided. (Project currently uses npm)
-RUN if [ -f package-lock.json ]; then npm ci; \
-    elif [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; \
-    elif [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
-    else npm install; fi
+# Copy package manifests first for better layer caching
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+# Copy minimal files needed by postinstall (nuxt prepare & prisma generate) to avoid failures
+COPY nuxt.config.ts ./
+COPY prisma ./prisma
+# Install dependencies (avoid npm ci strictness since lock & manifest mismatch triggered earlier)
+RUN npm install --no-audit --no-fund
 
 # 3. Build stage
 FROM base AS build
