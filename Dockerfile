@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for Nuxt 3 + Prisma on Fly.io
 # 1. Base dependencies
-FROM node:20 AS base
+FROM node:18 AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable
@@ -34,7 +34,7 @@ COPY . .
 RUN npm run build
 
 # 4. Production runtime
-FROM node:20-slim AS runtime
+FROM node:18-slim AS runtime
 ENV NODE_ENV=production
 ENV NUXT_NO_OXC=1
 WORKDIR /app
