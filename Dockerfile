@@ -1,37 +1,35 @@
 # Multi-stage Dockerfile for Nuxt 3 + Prisma on Fly.io
 # 1. Base dependencies
-FROM node:20-slim AS base
+FROM node:20 AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable
 
 # Install OS deps for Prisma + openssl
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  openssl libc6 libssl3 ca-certificates curl git build-essential python3 \
-  && rm -rf /var/lib/apt/lists/*
+# Full image already includes build toolchain; just refresh certs
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # 2. Dependencies stage
 FROM base AS deps
 # Copy package manifests first for better layer caching
-COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
-# Copy minimal files needed by postinstall (nuxt prepare & prisma generate) to avoid failures
-COPY nuxt.config.ts ./
+COPY package.json package-lock.json* ./
+RUN npm ci --no-audit --no-fund
 COPY prisma ./prisma
-# Install dependencies (avoid npm ci strictness since lock & manifest mismatch triggered earlier)
-RUN npm install --no-audit --no-fund --ignore-scripts
+COPY nuxt.config.ts ./
 
 # 3. Build stage
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Ensure prisma client is generated before build (script already does, but explicit is fine)
-RUN npx nuxt prepare && npm run build
+RUN npm run build
 
 # 4. Production runtime
 FROM node:20-slim AS runtime
 ENV NODE_ENV=production
+ENV NUXT_NO_OXC=1
 WORKDIR /app
 
 # Install openssl for Prisma
