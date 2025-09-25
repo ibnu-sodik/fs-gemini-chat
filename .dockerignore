@@ -1,0 +1,13 @@
+node_modules
+.output
+.git
+.gitignore
+Dockerfile
+npm-debug.log
+pnpm-lock.yaml
+yarn.lock
+coverage
+*.log
+.env
+.env.*
+prisma/dev.db
