@@ -11,7 +11,7 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare && prisma generate",
+    "postinstall": "nuxt prepare || echo 'nuxt prepare failed (ignored for build stage)' && prisma generate",
     "start": "node .output/server/index.mjs",
     "migrate:deploy": "prisma migrate deploy"
   },
