@@ -11,7 +11,7 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare || echo 'nuxt prepare failed (ignored for build stage)' && prisma generate",
+    "postinstall": "echo 'skip postinstall in container'",
     "start": "node .output/server/index.mjs",
     "migrate:deploy": "prisma migrate deploy"
   },
@@ -26,7 +26,7 @@
     "ai": "^5.0.46",
     "axios": "^1.12.2",
     "marked": "^16.3.0",
-    "nuxt": "^3.19.2",
+    "nuxt": "3.19.2",
     "pg": "^8.16.3",
     "prisma": "^6.16.2",
     "shadcn-vue": "^2.2.0",
@@ -40,6 +40,10 @@
     "@types/node": "^24.5.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
+  },
+  "optionalDependencies": {
+    "@oxc-parser/binding-linux-x64-gnu": "0.87.0",
+    "@oxc-transform/binding-linux-x64-gnu": "0.87.0"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
