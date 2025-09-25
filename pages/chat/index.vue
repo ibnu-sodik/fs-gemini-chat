@@ -8,6 +8,11 @@ import ChatInputPanel from "@/components/ChatInputPanel.vue";
 import RecordingPanel from "@/components/RecordingPanel.vue";
 import { useChat } from "@/composables/useChat";
 
+// Set page title
+useHead({
+  title: "Chat",
+});
+
 // Apply authentication middleware
 definePageMeta({
   middleware: "auth",

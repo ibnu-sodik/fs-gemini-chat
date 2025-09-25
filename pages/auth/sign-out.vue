@@ -21,6 +21,11 @@
 </template>
 
 <script setup lang="ts">
+// Set page title
+useHead({
+  title: "Sign Out",
+});
+
 // Apply auth middleware to ensure user is logged in before accessing sign-out
 definePageMeta({
   middleware: "auth",

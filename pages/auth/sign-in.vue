@@ -24,6 +24,11 @@
 </template>
 
 <script setup lang="ts">
+// Set page title
+useHead({
+  title: "Sign In",
+});
+
 // Apply guest middleware to prevent access when already logged in
 definePageMeta({
   middleware: "guest",

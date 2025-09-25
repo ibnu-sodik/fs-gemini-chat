@@ -10,10 +10,10 @@ jobs:
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
-    
+
     # Only run deployment on push to main/master, not on PRs
     if: github.event_name == 'push'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,8 +21,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -37,3 +37,5 @@ jobs:
         run: flyctl deploy --remote-only --app fs-gemini-chat
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          # Environment variables are already set in Fly.io secrets
+          # No need to pass them here as they're configured via flyctl secrets

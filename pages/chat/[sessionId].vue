@@ -18,6 +18,17 @@ const sessionId = computed(() => route.params.sessionId as string);
 // Initialize chat with specific session
 const { setActiveSession, activeSessionId, messages, sessions } = useChat();
 
+// Dynamic title based on session
+const sessionTitle = computed(() => {
+  const currentSession = sessions.value.find((s) => s.id === sessionId.value);
+  return currentSession?.title || "Chat Session";
+});
+
+// Set page title dynamically
+useHead({
+  title: sessionTitle,
+});
+
 // Set active session when component mounts or route changes
 watch(
   () => route.params.sessionId,

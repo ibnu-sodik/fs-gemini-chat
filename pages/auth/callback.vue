@@ -31,6 +31,11 @@
 </template>
 
 <script setup lang="ts">
+// Set page title
+useHead({
+  title: "Authentication",
+});
+
 const route = useRoute();
 const isError = ref(false);
 const errorMessage = ref("");

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 // Landing page untuk Gemini Chat
 
+// Set page title
+useHead({
+  title: "Home",
+});
+
 // Get app name from runtime config
 const { $config } = useNuxtApp();
 const appName = $config.public.appName;

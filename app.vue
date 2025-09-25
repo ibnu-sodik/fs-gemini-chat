@@ -15,6 +15,15 @@
 <script setup lang="ts">
 // Get current route
 const route = useRoute();
+const config = useRuntimeConfig();
+
+// Set default app title
+useHead({
+  titleTemplate: (title?: string) => {
+    const appName = config.public.appName || "FS Gemini Chat";
+    return title ? `${appName} | ${title}` : appName;
+  },
+});
 
 // Global auth check
 const { checkAuth } = useAuth();
