@@ -18,7 +18,7 @@ const appName = $config.public.appName;
       <div class="text-center">
         <h1 class="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
           Chat with
-          <span class="text-blue-600">Gemini AI</span>
+          <span class="text-blue-600">Gemini AI</span> ✨
         </h1>
         <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
           Experience the power of Google's Gemini AI in a beautiful, intuitive
