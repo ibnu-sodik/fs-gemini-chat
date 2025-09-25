@@ -20,14 +20,14 @@ COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
 COPY nuxt.config.ts ./
 COPY prisma ./prisma
 # Install dependencies (avoid npm ci strictness since lock & manifest mismatch triggered earlier)
-RUN npm install --no-audit --no-fund
+RUN npm install --no-audit --no-fund --ignore-scripts
 
 # 3. Build stage
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Ensure prisma client is generated before build (script already does, but explicit is fine)
-RUN npm run build
+RUN npx nuxt prepare && npm run build
 
 # 4. Production runtime
 FROM node:20-slim AS runtime
