@@ -9,7 +9,6 @@ kill_timeout = 5
   dockerfile = "Dockerfile"
 
 [deploy]
-  # release_command berjalan sekali sebelum versi baru diaktifkan
   release_command = "npm run migrate:deploy"
 
 [env]

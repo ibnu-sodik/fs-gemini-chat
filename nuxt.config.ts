@@ -32,13 +32,13 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     // Private keys (only available on server-side)
-    logtoAppSecret: process.env.NUXT_LOGTO_APP_SECRET,
-    logtoCookieEncryptionKey: process.env.NUXT_LOGTO_COOKIE_ENCRYPTION_KEY,
+    logtoAppSecret: process.env.NUXT_LOGTO_APP_SECRET || '',
+    logtoCookieEncryptionKey: process.env.NUXT_LOGTO_COOKIE_ENCRYPTION_KEY || '',
     // Public keys (exposed to client-side)
     public: {
-      appName: process.env.APP_NAME,
-      logtoEndpoint: process.env.NUXT_LOGTO_ENDPOINT,
-      logtoAppId: process.env.NUXT_LOGTO_APP_ID,
+      appName: process.env.APP_NAME || 'FS Gemini Chat',
+      logtoEndpoint: process.env.NUXT_LOGTO_ENDPOINT || process.env.LOGTO_ENDPOINT || '',
+      logtoAppId: process.env.NUXT_LOGTO_APP_ID || process.env.LOGTO_APP_ID || '',
     },
   },
 });
